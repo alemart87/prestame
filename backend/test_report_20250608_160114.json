@@ -1,0 +1,17 @@
+{
+  "timestamp": "2025-06-08T16:00:53.061246",
+  "test_results": {},
+  "performance": {
+    "search_time": 21.84274911880493,
+    "leads_found": 9,
+    "leads_per_second": 0.4120360468843956
+  },
+  "data_quality": {
+    "sources": {
+      "LinkedIn Paraguay (Simulado)": 3,
+      "Facebook Business (Simulado)": 3,
+      "MercadoLibre Paraguay": 3
+    },
+    "total_leads": 9
+  }
+}
