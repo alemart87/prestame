@@ -6,10 +6,46 @@ import stripe
 
 stripe_bp = Blueprint('stripe', __name__)
 
+def get_or_create_stripe_customer(user):
+    """
+    Obtiene o crea un cliente de Stripe para el usuario.
+    """
+    stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
+    
+    if user.stripe_customer_id:
+        try:
+            # Verificar que el cliente existe en Stripe
+            customer = stripe.Customer.retrieve(user.stripe_customer_id)
+            return customer
+        except stripe.error.InvalidRequestError:
+            # El cliente no existe, crear uno nuevo
+            user.stripe_customer_id = None
+    
+    # Crear nuevo cliente en Stripe
+    try:
+        customer = stripe.Customer.create(
+            email=user.email,
+            name=f"{user.first_name} {user.last_name}",
+            metadata={
+                'user_id': str(user.id),
+                'user_type': 'lender' if user.lender_profile else 'borrower'
+            }
+        )
+        
+        # Guardar el ID del cliente en la base de datos
+        user.stripe_customer_id = customer.id
+        db.session.commit()
+        
+        return customer
+    except Exception as e:
+        current_app.logger.error(f"Error al crear cliente de Stripe: {str(e)}")
+        raise e
+
 # Diccionario para mapear Price ID a la cantidad de leads
 LEAD_PACKAGES = {
     'price_1RXmUmGMLNY8JgDp5sCOotR9': 1,   # Paquete de 1 lead
     'price_1RXmNNGMLNY8JgDpZnx29GPN': 10,  # Paquete de 10 leads
+    'price_1RXv0UGMLNY8JgDphalXJuz2': 10,  # LEADS CON IA - 10 leads
 }
 
 SUBSCRIPTION_PLANS = {
@@ -62,10 +98,17 @@ def verify_checkout_session():
                 
                 # Añadir créditos del paquete de leads
                 credits_to_add = LEAD_PACKAGES.get(price_id, 0)
-                lender_profile.lead_credits += credits_to_add
+                
+                # Si es el producto LEADS CON IA, añadir a ai_search_credits
+                if price_id == 'price_1RXv0UGMLNY8JgDphalXJuz2':
+                    lender_profile.ai_search_credits += credits_to_add
+                    message = f'¡Compra exitosa! Se han añadido {credits_to_add} créditos de búsqueda con IA a tu cuenta.'
+                else:
+                    lender_profile.lead_credits += credits_to_add
+                    message = f'¡Compra exitosa! Se han añadido {credits_to_add} leads a tu cuenta.'
                 
                 db.session.commit()
-                return jsonify(status='success', message=f'¡Compra exitosa! Se han añadido {credits_to_add} leads a tu cuenta.'), 200
+                return jsonify(status='success', message=message), 200
 
         else:
             return jsonify(status='pending', message=f'El pago aún está en estado: {session.status}'), 400
@@ -84,15 +127,18 @@ def create_portal_session():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
 
-    if not user or not user.stripe_customer_id:
-        return jsonify({'error': 'Usuario de Stripe no válido'}), 400
+    if not user:
+        return jsonify({'error': 'Usuario no encontrado'}), 404
 
     stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
     return_url = f"{current_app.config['CORS_ORIGINS']}/subscriptions"
 
     try:
+        # Obtener o crear cliente de Stripe
+        customer = get_or_create_stripe_customer(user)
+        
         portal_session = stripe.billing_portal.Session.create(
-            customer=user.stripe_customer_id,
+            customer=customer.id,
             return_url=return_url,
         )
         return jsonify({'url': portal_session.url}), 200
@@ -117,20 +163,19 @@ def create_checkout_session():
 
     if not user:
         return jsonify({'error': 'Usuario no encontrado'}), 404
-        
-    if not user.stripe_customer_id:
-        return jsonify({'error': 'El usuario no tiene un ID de cliente de Stripe asociado'}), 400
 
     stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
 
     try:
+        # Obtener o crear cliente de Stripe
+        customer = get_or_create_stripe_customer(user)
+        
         # Definir las URLs de éxito y cancelación
-        # Usamos la URL del frontend que deberemos crear
         success_url = f"{current_app.config['CORS_ORIGINS']}/payment-success?session_id={{CHECKOUT_SESSION_ID}}"
         cancel_url = f"{current_app.config['CORS_ORIGINS']}/subscriptions"
 
         checkout_session = stripe.checkout.Session.create(
-            customer=user.stripe_customer_id,
+            customer=customer.id,
             payment_method_types=['card'],
             line_items=[
                 {
@@ -162,17 +207,20 @@ def create_one_time_checkout():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
 
-    if not user or not user.stripe_customer_id:
-        return jsonify({'error': 'Usuario de Stripe no válido'}), 400
+    if not user:
+        return jsonify({'error': 'Usuario no encontrado'}), 404
 
     stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
 
     try:
+        # Obtener o crear cliente de Stripe
+        customer = get_or_create_stripe_customer(user)
+        
         success_url = f"{current_app.config['CORS_ORIGINS']}/payment-success?session_id={{CHECKOUT_SESSION_ID}}&purchase=leads"
         cancel_url = f"{current_app.config['CORS_ORIGINS']}/subscriptions"
 
         checkout_session = stripe.checkout.Session.create(
-            customer=user.stripe_customer_id,
+            customer=customer.id,
             payment_method_types=['card'],
             line_items=[
                 {

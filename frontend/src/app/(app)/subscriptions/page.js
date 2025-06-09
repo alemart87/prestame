@@ -21,6 +21,24 @@ const leadPackages = [
     { name: 'Paquete de 10 Leads', price: '10', priceId: 'price_1RXmNNGMLNY8JgDpZnx29GPN' }
 ];
 
+const aiLeadPackages = [
+    { 
+        name: 'LEADS CON IA', 
+        price: '5', 
+        quantity: '10',
+        priceId: 'price_1RXv0UGMLNY8JgDphalXJuz2',
+        description: 'Leads reales extraídos con IA de sitios paraguayos',
+        features: [
+            'Datos verificados de empresas reales',
+            'Teléfonos paraguayos válidos (+595)',
+            'Emails de contacto verificados',
+            'Información de ubicación y negocio',
+            'Extraídos de LinkedIn, Facebook, MercadoLibre'
+        ],
+        isPopular: true
+    }
+];
+
 const SubscriptionsPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
@@ -101,6 +119,14 @@ const SubscriptionsPage = () => {
                     </div>
                 )}
 
+                {/* Sección principal: Planes de Suscripción */}
+                <div className="text-center mb-12">
+                    <h2 className="text-4xl font-bold text-gray-900 mb-4">Planes de Suscripción Mensual</h2>
+                    <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                        La mejor opción para prestamistas serios. Flujo constante de leads verificados con soporte completo.
+                    </p>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
                     {plans.map((plan) => (
                         <div
@@ -149,24 +175,105 @@ const SubscriptionsPage = () => {
                     ))}
                 </div>
 
-                <div className="mt-20 max-w-3xl mx-auto p-8 bg-gray-50 rounded-lg text-center border border-gray-200">
-                    <h3 className="text-xl font-semibold text-gray-800">¿Necesitas un impulso extra?</h3>
-                    <p className="text-gray-600 mt-2 max-w-md mx-auto">
-                        Si ya tienes una suscripción activa, puedes comprar paquetes de leads adicionales.
-                    </p>
-                    <div className="mt-6 flex flex-col sm:flex-row justify-center items-center gap-4">
-                        {leadPackages.map((pkg) => (
-                            <div key={pkg.name} className="text-center p-4">
-                                <span className="font-bold text-2xl text-gray-800">{pkg.price} Lead{pkg.price > 1 ? 's' : ''} por €{pkg.price}</span>
-                                <button
-                                    onClick={() => handleOneTimePurchase(pkg)}
-                                    disabled={isBuyingPackage === pkg.priceId}
-                                    className="mt-2 w-full sm:w-auto bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition duration-300 ease-in-out hover:bg-green-700 disabled:bg-green-400 disabled:cursor-wait"
-                                >
-                                    {isBuyingPackage === pkg.priceId ? 'Procesando...' : 'Comprar'}
-                                </button>
+                {/* Separador visual */}
+                <div className="my-20">
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-6 bg-white text-gray-500 font-medium">¿Prefieres comprar leads individuales?</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Sección secundaria: Compras de Leads */}
+                <div className="mb-16">
+                    <div className="text-center mb-12">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Compras Individuales de Leads</h3>
+                        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                            Para necesidades puntuales o para probar nuestros servicios antes de suscribirte
+                        </p>
+                    </div>
+
+                    {/* LEADS CON IA como opción destacada pero secundaria */}
+                    <div className="mb-12">
+                        <div className="text-center mb-6">
+                            <h4 className="text-xl font-semibold text-gray-900 mb-2">🤖 Leads con Inteligencia Artificial</h4>
+                            <p className="text-gray-600">
+                                Datos verificados extraídos automáticamente de sitios paraguayos
+                            </p>
+                        </div>
+                        
+                        {aiLeadPackages.map((pkg) => (
+                            <div key={pkg.name} className="max-w-xl mx-auto mb-8">
+                                <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-lg p-6 border border-blue-200">
+                                    <div className="text-center mb-4">
+                                        <h5 className="font-bold text-xl text-gray-900 mb-2">{pkg.name}</h5>
+                                        <div className="flex items-center justify-center gap-2 mb-3">
+                                            <span className="text-3xl font-extrabold text-blue-600">€{pkg.price}</span>
+                                            <div className="text-left">
+                                                <div className="text-sm text-gray-600">por {pkg.quantity} leads</div>
+                                                <div className="text-xs text-green-600 font-semibold">€0.50 por lead</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-6 text-sm">
+                                        {pkg.features.map((feature, index) => (
+                                            <div key={index} className="flex items-center">
+                                                <CheckIcon />
+                                                <span className="ml-2 text-gray-700">{feature}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="text-center">
+                                        <button
+                                            onClick={() => handleOneTimePurchase(pkg)}
+                                            disabled={isBuyingPackage === pkg.priceId}
+                                            className="bg-gradient-to-r from-blue-600 to-green-600 text-white font-semibold py-3 px-8 rounded-lg transition duration-300 ease-in-out hover:from-blue-700 hover:to-green-700 disabled:opacity-70 disabled:cursor-wait"
+                                        >
+                                            {isBuyingPackage === pkg.priceId ? '🔄 Procesando...' : '🛒 Comprar Leads con IA'}
+                                        </button>
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            💳 Pago único • ⚡ Entrega inmediata • 🔒 Datos 100% reales
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         ))}
+                    </div>
+
+                    {/* Leads básicos sin IA */}
+                    <div className="max-w-2xl mx-auto">
+                        <div className="text-center mb-6">
+                            <h4 className="text-lg font-semibold text-gray-800">📋 Leads Básicos (Sin IA)</h4>
+                            <p className="text-gray-600 text-sm">
+                                Leads básicos sin verificación automática - Para suscriptores existentes
+                            </p>
+                        </div>
+                        
+                        <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+                                {leadPackages.map((pkg) => (
+                                    <div key={pkg.name} className="text-center p-4 bg-white rounded-lg border border-gray-300 flex-1 max-w-xs">
+                                        <span className="font-semibold text-lg text-gray-800">{pkg.price} Lead{pkg.price > 1 ? 's' : ''}</span>
+                                        <div className="text-sm text-gray-600 mb-3">€{pkg.price}</div>
+                                        <button
+                                            onClick={() => handleOneTimePurchase(pkg)}
+                                            disabled={isBuyingPackage === pkg.priceId}
+                                            className="w-full bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition duration-300 ease-in-out hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-wait text-sm"
+                                        >
+                                            {isBuyingPackage === pkg.priceId ? 'Procesando...' : 'Comprar'}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-4 text-center">
+                                ⚠️ Estos leads no incluyen verificación con IA ni garantía de datos reales
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

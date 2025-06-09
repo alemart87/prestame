@@ -53,6 +53,7 @@ def create_app(config_class=Config):
     from app.routes.stripe_routes import stripe_bp
     from app.routes.ai_routes import ai_bp
     from app.routes.admin import admin_bp
+    from app.routes.health import health_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(lenders_bp, url_prefix='/api/lenders')
@@ -61,6 +62,7 @@ def create_app(config_class=Config):
     app.register_blueprint(stripe_bp, url_prefix='/api/stripe')
     app.register_blueprint(ai_bp, url_prefix='/api/ai')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(health_bp)
     
     # Registrar comandos CLI
     from . import commands

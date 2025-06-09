@@ -230,19 +230,36 @@ El sistema incluye un scraper avanzado que busca datos reales en:
 
 ## 🚀 Despliegue
 
-### Producción:
-1. Configurar base de datos PostgreSQL
-2. Configurar variables de entorno de producción
-3. Ejecutar migraciones: `flask db upgrade`
-4. Construir frontend: `npm run build`
-5. Configurar servidor web (Nginx + Gunicorn)
+### Render.com (Recomendado):
+Tu proyecto está completamente configurado para desplegarse en Render.com con Docker:
+
+```bash
+# Probar Dockerfiles localmente (opcional)
+chmod +x test_docker.sh
+./test_docker.sh
+```
+
+**📖 Sigue la guía completa**: [`DEPLOY_RENDER.md`](./DEPLOY_RENDER.md)
+
+### Archivos de Despliegue Incluidos:
+- ✅ `backend/Dockerfile` - Imagen Docker para Flask + PostgreSQL + Selenium
+- ✅ `frontend/Dockerfile` - Imagen Docker para Next.js optimizada
+- ✅ `backend/init_production.py` - Script de inicialización de BD
+- ✅ `backend/app/routes/health.py` - Health checks para Render
+- ✅ `.dockerignore` - Archivos excluidos del build
+- ✅ `DEPLOY_RENDER.md` - Guía paso a paso
 
 ### Variables de Entorno de Producción:
 ```env
-FLASK_ENV=production
+# Backend
 DATABASE_URL=postgresql://...
 JWT_SECRET_KEY=clave_super_segura_en_produccion
 STRIPE_SECRET_KEY=sk_live_...
+FLASK_ENV=production
+
+# Frontend  
+NEXT_PUBLIC_API_URL=https://prestame-backend.onrender.com
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
 ```
 
 ## 🤝 Contribución
