@@ -9,6 +9,8 @@ from marshmallow import ValidationError
 from app import db
 import datetime
 from app.utils.stripe_utils import create_stripe_customer
+from app.utils.email_utils import send_email
+from flask import url_for
 
 auth_bp = Blueprint('auth', __name__)
 user_schema = UserSchema()
@@ -225,4 +227,60 @@ def update_profile():
     except Exception as e:
         print(f"ERROR EN UPDATE PROFILE: {str(e)}")
         db.session.rollback()
-        return jsonify({'error': 'Error interno del servidor'}), 500 
+        return jsonify({'error': 'Error interno del servidor'}), 500
+
+@auth_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    """Endpoint para solicitar reseteo de contraseña."""
+    data = request.get_json()
+    email = data.get('email')
+    
+    user = User.query.filter_by(email=email).first()
+    
+    if user:
+        token = user.get_reset_token()
+        db.session.commit()
+        
+        # URL para el frontend (debe coincidir con la ruta en tu frontend)
+        reset_url = f"http://localhost:3000/reset-password/{token}" 
+        
+        send_email(
+            to_email=user.email,
+            subject='Restablecimiento de Contraseña',
+            body=f'<h1>Restablece tu contraseña</h1>'
+                 f'<p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>'
+                 f'<a href="{reset_url}">{reset_url}</a>'
+                 f'<p>Si no solicitaste esto, ignora este correo.</p>'
+        )
+    
+    # Se envía una respuesta genérica para no revelar si un email existe o no
+    return jsonify({'message': 'Si tu correo está registrado, recibirás un enlace para restablecer tu contraseña.'}), 200
+
+@auth_bp.route('/reset-password/<token>', methods=['GET'])
+def verify_reset_token(token):
+    """Verifica el token de reseteo."""
+    user = User.verify_reset_token(token)
+    if not user:
+        return jsonify({'error': 'Token inválido o expirado'}), 400
+    
+    return jsonify({'message': 'Token válido'}), 200
+
+@auth_bp.route('/reset-password/<token>', methods=['POST'])
+def reset_password(token):
+    """Endpoint para establecer una nueva contraseña."""
+    user = User.verify_reset_token(token)
+    if not user:
+        return jsonify({'error': 'Token inválido o expirado'}), 400
+        
+    data = request.get_json()
+    new_password = data.get('password')
+    
+    if not new_password:
+        return jsonify({'error': 'La contraseña es requerida'}), 400
+        
+    user.set_password(new_password)
+    user.reset_token = None
+    user.reset_token_expiration = None
+    db.session.commit()
+    
+    return jsonify({'message': 'Tu contraseña ha sido actualizada.'}), 200 

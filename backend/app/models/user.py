@@ -1,6 +1,8 @@
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
+import jwt
+from flask import current_app
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -21,6 +23,10 @@ class User(db.Model):
     
     # Campo para el ID de cliente de Stripe
     stripe_customer_id = db.Column(db.String(255), nullable=True)
+    
+    # Campos para reseteo de contraseña
+    reset_token = db.Column(db.String(255), nullable=True)
+    reset_token_expiration = db.Column(db.DateTime, nullable=True)
     
     # Relaciones
     borrower_profile = db.relationship('BorrowerProfile', backref='user', uselist=False, cascade='all, delete-orphan')
@@ -43,6 +49,28 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
+    def get_reset_token(self, expires_in=600):
+        self.reset_token = jwt.encode(
+            {'reset_password': self.id, 'exp': datetime.utcnow() + timedelta(seconds=expires_in)},
+            current_app.config['SECRET_KEY'],
+            algorithm='HS256'
+        )
+        self.reset_token_expiration = datetime.utcnow() + timedelta(seconds=expires_in)
+        return self.reset_token
+
+    @staticmethod
+    def verify_reset_token(token):
+        try:
+            payload = jwt.decode(
+                token,
+                current_app.config['SECRET_KEY'],
+                algorithms=['HS256']
+            )
+            user_id = payload['reset_password']
+            return User.query.get(user_id)
+        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+            return None
+            
     def to_dict(self):
         return {
             'id': self.id,

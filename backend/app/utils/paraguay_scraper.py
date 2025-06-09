@@ -524,4 +524,4 @@ def analyze_search_prompt(prompt):
     if not keywords:
         keywords = prompt_lower.split()
     
-    return ' '.join(keywords[:3])  # Usar las primeras 3 palabras clave 
+    return ' '.join(keywords[:3])  # Usar las primeras 3 palabras clave     
