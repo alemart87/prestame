@@ -3,16 +3,41 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { getLeadsForLender } from '../../../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
-import { FaUserPlus, FaEnvelope, FaPhone, FaCity, FaFileAlt, FaSpinner, FaGlobe, FaCheckCircle, FaBuilding, FaSync } from 'react-icons/fa';
+import { 
+  FiUserPlus, 
+  FiMail, 
+  FiPhone, 
+  FiMapPin, 
+  FiFileText, 
+  FiGlobe, 
+  FiCheckCircle, 
+  FiBuilding, 
+  FiRefreshCw,
+  FiTarget,
+  FiTrendingUp,
+  FiUsers,
+  FiStar,
+  FiFilter,
+  FiSearch,
+  FiEye,
+  FiHeart,
+  FiClock,
+  FiShield
+} from 'react-icons/fi';
+import AnimatedBackground from '../../../components/AnimatedBackground';
+import GlassCard from '../../../components/GlassCard';
+import AppNavbar from '../../../components/AppNavbar';
 
 const LeadsPage = () => {
     const { user, profile, loading: userLoading } = useAuth();
     const [leads, setLeads] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-
     const [lastUpdated, setLastUpdated] = useState(null);
     const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('all');
 
     // Función para cargar leads
     const fetchLeads = async (showToast = false) => {
@@ -86,262 +111,500 @@ const LeadsPage = () => {
     }, [leads.length, user, autoRefreshEnabled, isLoading]);
 
     // Solo mostrar leads reales - filtrar automáticamente
-    const filteredLeads = leads.filter(lead => lead.contact?.real_data === true);
+    const filteredLeads = leads.filter(lead => {
+        const matchesSearch = !searchTerm || 
+            lead.contact?.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            lead.contact?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            lead.contact?.city?.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const matchesCategory = selectedCategory === 'all' || 
+            lead.contact?.category === selectedCategory;
+            
+        return lead.contact?.real_data === true && matchesSearch && matchesCategory;
+    });
 
     // Contar leads reales
-    const realLeadsCount = filteredLeads.length;
+    const realLeadsCount = leads.filter(lead => lead.contact?.real_data === true).length;
+
+    // Obtener categorías únicas
+    const categories = [...new Set(leads
+        .filter(lead => lead.contact?.real_data === true)
+        .map(lead => lead.contact?.category)
+        .filter(Boolean)
+    )];
 
     // Solo mostrar spinner de pantalla completa en la carga inicial
     if ((isLoading && leads.length === 0) || userLoading) {
         return (
-            <div className="flex flex-col justify-center items-center h-screen">
-                <FaSpinner className="animate-spin text-4xl text-blue-500 mb-4" />
-                <p className="text-gray-600">Cargando tus leads...</p>
+            <AnimatedBackground particleCount={15}>
+                <div className="flex justify-center items-center min-h-screen">
+                    <GlassCard className="text-center">
+                        <motion.div
+                            className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full mx-auto mb-4"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        />
+                        <p className="text-white/80 text-lg">Cargando tus leads...</p>
+                    </GlassCard>
             </div>
+            </AnimatedBackground>
         );
     }
     
     if (user?.user_type !== 'lender') {
         return (
-            <div className="container mx-auto p-8 text-center bg-white rounded-lg shadow">
-                <h2 className="text-2xl font-semibold text-gray-700">Acceso Denegado</h2>
-                <p className="text-gray-500 mt-2">Esta sección es solo para prestamistas.</p>
+            <AnimatedBackground particleCount={15}>
+                <div className="flex justify-center items-center min-h-screen">
+                    <GlassCard className="text-center">
+                        <motion.div
+                            className="w-20 h-20 bg-gradient-to-r from-red-500 to-pink-600 rounded-3xl flex items-center justify-center mx-auto mb-6"
+                            whileHover={{ scale: 1.1, rotate: 5 }}
+                        >
+                            <FiShield className="w-10 h-10 text-white" />
+                        </motion.div>
+                        <h2 className="text-2xl font-semibold text-white mb-2">Acceso Denegado</h2>
+                        <p className="text-white/70">Esta sección es solo para prestamistas.</p>
+                    </GlassCard>
             </div>
+            </AnimatedBackground>
         );
     }
 
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            <div className="flex justify-between items-center mb-8">
+        <div>
+            <AppNavbar />
+            
+            <AnimatedBackground particleCount={30}>
+                <div className="min-h-screen pt-20 px-4">
+                    <div className="max-w-7xl mx-auto space-y-8">
+                        {/* Header */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8 }}
+                            className="flex flex-col lg:flex-row lg:items-center lg:justify-between"
+                        >
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Mis Leads</h1>
+                                <motion.h1 
+                                    className="text-4xl md:text-5xl font-bold text-white mb-2"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.2, duration: 0.6 }}
+                                >
+                                    Mis Leads
+                                </motion.h1>
+                                <motion.p 
+                                    className="text-white/70 text-lg"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.3, duration: 0.6 }}
+                                >
+                                    Empresas paraguayas verificadas que necesitan financiamiento
+                                </motion.p>
                     {lastUpdated && (
-                        <p className="text-sm text-gray-500 mt-1">
+                                    <motion.p 
+                                        className="text-white/50 text-sm mt-1"
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.4, duration: 0.6 }}
+                                    >
                             Última actualización: {lastUpdated.toLocaleTimeString('es-PY')}
-                        </p>
+                                    </motion.p>
                     )}
                 </div>
-                <div className="text-right">
-                    <div className="flex items-center gap-2 mb-2">
-                        <button
+                            
+                            <motion.div
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.4, duration: 0.6 }}
+                                className="flex items-center space-x-4"
+                            >
+                                <motion.button
+                                    onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+                                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+                                        autoRefreshEnabled 
+                                            ? 'bg-green-500/20 text-green-300 border border-green-500/30' 
+                                            : 'bg-white/10 text-white/70 border border-white/20'
+                                    }`}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    title={autoRefreshEnabled ? 'Desactivar actualización automática' : 'Activar actualización automática'}
+                                >
+                                    {autoRefreshEnabled ? '🔄 Auto' : '⏸️ Manual'}
+                                </motion.button>
+
+                                <motion.button
                             onClick={() => fetchLeads(true)}
                             disabled={isLoading}
-                            className={`px-4 py-2 rounded-lg transition-colors ${
+                                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 ${
                                 isLoading 
-                                    ? 'bg-gray-400 cursor-not-allowed' 
-                                    : 'bg-blue-600 hover:bg-blue-700'
-                            } text-white`}
+                                            ? 'bg-gray-500/20 text-gray-400 cursor-not-allowed' 
+                                            : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl'
+                                    }`}
+                                    whileHover={!isLoading ? { scale: 1.05, y: -2 } : {}}
+                                    whileTap={!isLoading ? { scale: 0.95 } : {}}
                         >
                             {isLoading ? (
-                                <FaSpinner className="inline mr-2 animate-spin" />
-                            ) : (
-                                <FaSync className="inline mr-2" />
-                            )}
-                            {isLoading ? 'Actualizando...' : 'Actualizar'}
-                        </button>
-                        <button
-                            onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
-                            className={`px-3 py-2 rounded-lg text-sm transition-colors ${
-                                autoRefreshEnabled 
-                                    ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                            title={autoRefreshEnabled ? 'Desactivar actualización automática' : 'Activar actualización automática'}
-                        >
-                            {autoRefreshEnabled ? '🔄 Auto' : '⏸️ Manual'}
-                        </button>
+                                        <>
+                                            <motion.div
+                                                className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+                                                animate={{ rotate: 360 }}
+                                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                            />
+                                            <span>Actualizando...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FiRefreshCw className="w-4 h-4" />
+                                            <span>Actualizar</span>
+                                        </>
+                                    )}
+                                </motion.button>
+                            </motion.div>
+                        </motion.div>
 
-                    </div>
-                    <p className="text-sm text-gray-600">
-                        <FaGlobe className="inline mr-1 text-green-600" />
-                        <strong>{realLeadsCount} Leads Reales</strong> disponibles
-                    </p>
-                    <p className="text-xs text-green-600 mt-1">
-                        ✅ Datos verificados de empresas paraguayas
+                        {/* Estadísticas */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.5, duration: 0.6 }}
+                            className="grid grid-cols-1 md:grid-cols-4 gap-6"
+                        >
+                            {[
+                                { 
+                                    label: 'Leads Reales', 
+                                    value: realLeadsCount, 
+                                    icon: FiCheckCircle, 
+                                    gradient: 'from-green-500 to-emerald-600',
+                                    description: 'Verificados'
+                                },
+                                { 
+                                    label: 'Empresas', 
+                                    value: filteredLeads.length, 
+                                    icon: FiBuilding, 
+                                    gradient: 'from-blue-500 to-cyan-600',
+                                    description: 'Disponibles'
+                                },
+                                { 
+                                    label: 'Categorías', 
+                                    value: categories.length, 
+                                    icon: FiTarget, 
+                                    gradient: 'from-purple-500 to-pink-600',
+                                    description: 'Diferentes'
+                                },
+                                { 
+                                    label: 'Actualización', 
+                                    value: autoRefreshEnabled ? '30s' : 'Manual', 
+                                    icon: FiClock, 
+                                    gradient: 'from-orange-500 to-red-600',
+                                    description: 'Frecuencia'
+                                }
+                            ].map((stat, index) => {
+                                const Icon = stat.icon;
+                                return (
+                                    <motion.div
+                                        key={stat.label}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.6 + index * 0.1, duration: 0.6 }}
+                                    >
+                                        <GlassCard className="text-center">
+                                            <motion.div
+                                                className={`w-16 h-16 bg-gradient-to-r ${stat.gradient} rounded-3xl flex items-center justify-center mx-auto mb-4`}
+                                                whileHover={{ scale: 1.1, rotate: 5 }}
+                                            >
+                                                <Icon className="w-8 h-8 text-white" />
+                                            </motion.div>
+                                            <p className="text-white text-2xl font-bold mb-1">{stat.value}</p>
+                                            <p className="text-white/70 text-sm">{stat.label}</p>
+                                            <p className="text-white/50 text-xs">{stat.description}</p>
+                                        </GlassCard>
+                                    </motion.div>
+                                );
+                            })}
+                        </motion.div>
+
+                        {/* Información de leads reales */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.7, duration: 0.6 }}
+                        >
+                            <GlassCard className="border-green-500/30 bg-green-500/10">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-4">
+                                        <motion.div
+                                            className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center"
+                                            whileHover={{ scale: 1.1, rotate: 5 }}
+                                        >
+                                            <FiCheckCircle className="w-6 h-6 text-white" />
+                                        </motion.div>
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-white">Leads Reales Verificados</h3>
+                                            <p className="text-green-200 text-sm">
+                                                Datos extraídos de sitios web paraguayos oficiales
                     </p>
                     {autoRefreshEnabled && leads.length > 0 && (
-                        <p className="text-xs text-blue-600 mt-1">
+                                                <p className="text-green-300 text-xs mt-1">
                             🔄 Actualización automática cada 30s
                         </p>
                     )}
                 </div>
             </div>
-
-            {/* Información de leads reales */}
-            <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                        <FaCheckCircle className="text-green-600 mr-2 text-xl" />
-                        <div>
-                            <h3 className="font-semibold text-green-800">Leads Reales Verificados</h3>
-                            <p className="text-sm text-green-600">
-                                Datos extraídos de sitios web paraguayos oficiales
-                            </p>
+                                    <div className="text-right">
+                                        <span className="text-3xl font-bold text-white">{realLeadsCount}</span>
+                                        <p className="text-green-200 text-sm">Contactos disponibles</p>
                         </div>
                     </div>
-                    <div className="text-right">
-                        <span className="text-2xl font-bold text-green-700">{realLeadsCount}</span>
-                        <p className="text-sm text-green-600">Contactos disponibles</p>
+                            </GlassCard>
+                        </motion.div>
+
+                        {/* Filtros y Búsqueda */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.8, duration: 0.6 }}
+                        >
+                            <GlassCard>
+                                <div className="flex items-center space-x-4 mb-6">
+                                    <motion.div
+                                        className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center"
+                                        whileHover={{ scale: 1.1, rotate: 5 }}
+                                    >
+                                        <FiFilter className="w-4 h-4 text-white" />
+                                    </motion.div>
+                                    <h3 className="text-lg font-semibold text-white">Filtrar y Buscar</h3>
                     </div>
+                                
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {/* Búsqueda */}
+                                    <div>
+                                        <label className="block text-white/90 text-sm font-medium mb-2">
+                                            Buscar empresas
+                                        </label>
+                                        <div className="relative">
+                                            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 w-4 h-4" />
+                                            <motion.input
+                                                type="text"
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-300"
+                                                placeholder="Buscar por empresa, email o ciudad..."
+                                                whileFocus={{ scale: 1.02 }}
+                                            />
                 </div>
             </div>
 
+                                    {/* Categorías */}
+                                    <div>
+                                        <label className="block text-white/90 text-sm font-medium mb-2">
+                                            Categoría
+                                        </label>
+                                        <motion.select
+                                            value={selectedCategory}
+                                            onChange={(e) => setSelectedCategory(e.target.value)}
+                                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-300"
+                                            whileFocus={{ scale: 1.02 }}
+                                        >
+                                            <option value="all" className="bg-slate-800">Todas las categorías</option>
+                                            {categories.map(category => (
+                                                <option key={category} value={category} className="bg-slate-800 capitalize">
+                                                    {category?.replace('_', ' ')}
+                                                </option>
+                                            ))}
+                                        </motion.select>
+                                    </div>
+                                </div>
+                            </GlassCard>
+                        </motion.div>
+
+                        {/* Lista de Leads */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.9, duration: 0.6 }}
+                            className="space-y-6"
+                        >
             {filteredLeads.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-lg shadow">
-                    <FaUserPlus className="mx-auto text-5xl text-green-400 mb-4" />
-                    <h2 className="text-2xl font-semibold text-gray-700">
-                        No tienes leads reales todavía
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 1.0, duration: 0.6 }}
+                                >
+                                    <GlassCard className="text-center py-12">
+                                        <motion.div
+                                            className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6"
+                                            whileHover={{ scale: 1.1, rotate: 5 }}
+                                        >
+                                            <FiUserPlus className="w-10 h-10 text-white" />
+                                        </motion.div>
+                                        <h2 className="text-2xl font-semibold text-white mb-2">
+                                            {searchTerm || selectedCategory !== 'all' 
+                                                ? 'No se encontraron leads con esos filtros'
+                                                : 'No tienes leads reales todavía'
+                                            }
                     </h2>
-                    <p className="text-gray-500 mt-2 mb-4">
-                        Usa el Buscador de Leads Reales para encontrar empresas paraguayas que necesitan financiamiento.
+                                        <p className="text-white/70 mb-6">
+                                            {searchTerm || selectedCategory !== 'all'
+                                                ? 'Intenta cambiar los filtros de búsqueda'
+                                                : 'Usa el Buscador de Leads Reales para encontrar empresas paraguayas que necesitan financiamiento.'
+                                            }
                     </p>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
-                        <h3 className="font-semibold text-blue-800 mb-2">¿Cómo funciona?</h3>
-                        <ul className="text-sm text-blue-700 text-left space-y-1">
-                            <li>✅ Describe el tipo de cliente que buscas</li>
-                            <li>✅ Nuestra IA busca en sitios paraguayos reales</li>
-                            <li>✅ Obtienes contactos verificados con teléfonos y emails</li>
-                            <li>✅ Contacta directamente a empresas interesadas</li>
+                                        
+                                        {!searchTerm && selectedCategory === 'all' && (
+                                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6 max-w-md mx-auto">
+                                                <h3 className="font-semibold text-blue-300 mb-3">¿Cómo funciona?</h3>
+                                                <ul className="text-sm text-blue-200 text-left space-y-2">
+                                                    <li className="flex items-center space-x-2">
+                                                        <FiGlobe className="w-4 h-4 text-blue-400" />
+                                                        <span>Extraemos datos de sitios web paraguayos</span>
+                                                    </li>
+                                                    <li className="flex items-center space-x-2">
+                                                        <FiCheckCircle className="w-4 h-4 text-green-400" />
+                                                        <span>Verificamos la información automáticamente</span>
+                                                    </li>
+                                                    <li className="flex items-center space-x-2">
+                                                        <FiTarget className="w-4 h-4 text-purple-400" />
+                                                        <span>Te mostramos empresas que necesitan financiamiento</span>
+                                                    </li>
                         </ul>
                     </div>
-                </div>
+                                        )}
+                                    </GlassCard>
+                                </motion.div>
             ) : (
-                <div className={`bg-white rounded-lg shadow-lg overflow-hidden ${isLoading && leads.length > 0 ? 'opacity-75' : ''}`}>
-                    {/* Indicador de actualización en segundo plano */}
-                    {isLoading && leads.length > 0 && (
-                        <div className="bg-blue-50 border-l-4 border-blue-400 p-2">
-                            <div className="flex items-center">
-                                <FaSpinner className="animate-spin text-blue-500 mr-2" />
-                                <p className="text-sm text-blue-700">Actualizando leads...</p>
-                            </div>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                                    <AnimatePresence>
+                                        {filteredLeads.map((lead, index) => (
+                                            <motion.div
+                                                key={lead.id || index}
+                                                initial={{ opacity: 0, y: 50 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -50 }}
+                                                transition={{ delay: 1.0 + index * 0.1, duration: 0.6 }}
+                                                layout
+                                            >
+                                                <motion.div
+                                                    whileHover={{ scale: 1.02, y: -5 }}
+                                                    transition={{ duration: 0.3 }}
+                                                >
+                                                    <GlassCard className="h-full">
+                                                        {/* Header de la tarjeta */}
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <motion.div
+                                                                className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center space-x-2"
+                                                                whileHover={{ scale: 1.05 }}
+                                                            >
+                                                                <FiCheckCircle className="w-3 h-3 text-white" />
+                                                                <span className="text-white text-xs font-medium">Verificado</span>
+                                                            </motion.div>
+                                                            
+                                                            <div className="flex items-center space-x-2">
+                                                                <motion.button
+                                                                    className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all duration-300"
+                                                                    whileHover={{ scale: 1.1 }}
+                                                                    whileTap={{ scale: 0.9 }}
+                                                                >
+                                                                    <FiEye className="w-4 h-4 text-white" />
+                                                                </motion.button>
+                                                                
+                                                                <motion.button
+                                                                    className="p-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-all duration-300"
+                                                                    whileHover={{ scale: 1.1 }}
+                                                                    whileTap={{ scale: 0.9 }}
+                                                                >
+                                                                    <FiHeart className="w-4 h-4 text-red-400" />
+                                                                </motion.button>
                         </div>
-                    )}
-                    <div className="overflow-x-auto">
-                        <table className="w-full table-auto">
-                            <thead className="bg-gray-50 border-b border-gray-200">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Completo</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ubicación</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Necesidad</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fuente</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {filteredLeads.map(lead => {
-                                    return (
-                                        <tr key={lead.id} className="bg-green-50 hover:bg-green-100 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center">
-                                                    <FaCheckCircle className="text-green-500 mr-3" />
-                                                    <div>
-                                                        <span className="font-medium text-gray-900">
-                                                            {lead.contact?.full_name || 'Sin nombre'}
-                                                        </span>
-                                                        <div className="mt-1">
-                                                            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                                                                <FaGlobe className="inline mr-1" />
-                                                                VERIFICADO
-                                                            </span>
                                                         </div>
+
+                                                        {/* Información principal */}
+                                                        <div className="space-y-4">
+                                                            <div className="flex items-center space-x-3">
+                                                                <motion.div
+                                                                    className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center"
+                                                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                                                >
+                                                                    <FiBuilding className="w-6 h-6 text-white" />
+                                                                </motion.div>
+                                                                <div className="flex-1">
+                                                                    <h3 className="text-white font-semibold text-lg">
+                                                                        {lead.contact?.company_name || 'Empresa sin nombre'}
+                                                                    </h3>
+                                                                    {lead.contact?.category && (
+                                                                        <p className="text-white/60 text-sm capitalize">
+                                                                            {lead.contact.category.replace('_', ' ')}
+                                                                        </p>
+                                                                    )}
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                <div className="flex items-center mb-1">
-                                                    <FaEnvelope className="mr-2 text-green-500" /> 
-                                                    <span className="font-semibold text-green-700">
-                                                        {lead.contact?.email || 'Sin email'}
-                                                    </span>
+
+                                                            <div className="space-y-3">
+                                                                {lead.contact?.email && (
+                                                                    <div className="flex items-center space-x-3">
+                                                                        <FiMail className="w-4 h-4 text-blue-400" />
+                                                                        <span className="text-white/80 text-sm">{lead.contact.email}</span>
                                                 </div>
-                                                <div className="flex items-center">
-                                                    <FaPhone className="mr-2 text-green-500" /> 
-                                                    <span className="font-semibold text-green-700">
-                                                        {lead.contact?.phone_number || 'Sin teléfono'}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                <div className="flex items-center">
-                                                    <FaCity className="mr-2 text-green-500" /> 
-                                                    <span className="font-semibold text-green-700">
-                                                        {lead.contact?.city || 'Sin ciudad'}, {lead.contact?.country || 'Paraguay'}
-                                                    </span>
-                                                </div>
-                                                {lead.contact?.business_type && (
-                                                    <div className="flex items-center mt-1">
-                                                        <FaBuilding className="mr-2 text-green-500" />
-                                                        <span className="text-xs text-green-600 font-medium">
-                                                            {lead.contact.business_type}
-                                                        </span>
+                                                                )}
+                                                                
+                                                                {lead.contact?.phone && (
+                                                                    <div className="flex items-center space-x-3">
+                                                                        <FiPhone className="w-4 h-4 text-green-400" />
+                                                                        <span className="text-white/80 text-sm">{lead.contact.phone}</span>
                                                     </div>
                                                 )}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600 max-w-sm">
-                                                <div className="flex items-center">
-                                                   <FaFileAlt className="mr-2 text-gray-400 flex-shrink-0" />
-                                                   <p className="truncate">{lead.loan_request?.purpose || 'No especificada'}</p>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                <div className="text-green-600 font-medium">
-                                                    <FaGlobe className="inline mr-1" />
-                                                    {lead.contact?.source || 'Web Paraguay'}
-                                                </div>
-                                                <div className="text-xs text-green-500 mt-1">
-                                                    ✅ Verificado
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                                                                
+                                                                {lead.contact?.city && (
+                                                                    <div className="flex items-center space-x-3">
+                                                                        <FiMapPin className="w-4 h-4 text-purple-400" />
+                                                                        <span className="text-white/80 text-sm">{lead.contact.city}</span>
                 </div>
             )}
 
-            {/* Información adicional */}
-            {realLeadsCount > 0 && (
-                <div className="mt-8 p-6 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg">
-                    <h3 className="font-semibold text-green-800 mb-3">
-                        <FaCheckCircle className="inline mr-2" />
-                        Leads Reales Verificados
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                        <div className="space-y-2">
-                            <div className="flex items-center text-green-700">
-                                <FaGlobe className="mr-2" />
-                                <strong>Fuentes Verificadas:</strong>
+                                                                {lead.contact?.website && (
+                                                                    <div className="flex items-center space-x-3">
+                                                                        <FiGlobe className="w-4 h-4 text-cyan-400" />
+                                                                        <a 
+                                                                            href={lead.contact.website} 
+                                                                            target="_blank" 
+                                                                            rel="noopener noreferrer"
+                                                                            className="text-cyan-300 text-sm hover:text-cyan-200 transition-colors"
+                                                                        >
+                                                                            Sitio web
+                                                                        </a>
                             </div>
-                            <ul className="text-green-600 ml-6 space-y-1">
-                                <li>• LinkedIn Paraguay</li>
-                                <li>• Facebook Business</li>
-                                <li>• MercadoLibre Paraguay</li>
-                                <li>• Directorios empresariales</li>
-                            </ul>
+                                                                )}
                         </div>
-                        <div className="space-y-2">
-                            <div className="flex items-center text-green-700">
-                                <FaCheckCircle className="mr-2" />
-                                <strong>Datos Incluidos:</strong>
+
+                                                            {lead.contact?.description && (
+                                                                <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                                                                    <p className="text-white/80 text-sm">
+                                                                        {lead.contact.description}
+                                                                    </p>
                             </div>
-                            <ul className="text-green-600 ml-6 space-y-1">
-                                <li>• Nombres y empresas reales</li>
-                                <li>• Teléfonos paraguayos válidos</li>
-                                <li>• Emails verificados</li>
-                                <li>• Ubicación y tipo de negocio</li>
-                            </ul>
+                                                            )}
+
+                                                            {/* Botón de contacto */}
+                                                            <motion.button
+                                                                className="w-full px-4 py-3 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
+                                                                whileHover={{ scale: 1.02 }}
+                                                                whileTap={{ scale: 0.98 }}
+                                                            >
+                                                                <FiMail className="w-4 h-4" />
+                                                                <span>Contactar Empresa</span>
+                                                            </motion.button>
                         </div>
+                                                    </GlassCard>
+                                                </motion.div>
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
                     </div>
-                    <div className="mt-4 p-3 bg-green-100 rounded-lg">
-                        <p className="text-green-800 text-sm font-medium">
-                            💡 <strong>Tip:</strong> Estos son contactos reales de empresas paraguayas. 
-                            Puedes llamar o escribir directamente para ofrecer tus servicios de financiamiento.
-                        </p>
+                            )}
+                        </motion.div>
                     </div>
                 </div>
-            )}
+            </AnimatedBackground>
         </div>
     );
 };

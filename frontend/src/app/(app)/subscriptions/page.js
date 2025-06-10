@@ -2,18 +2,16 @@
 
 import React, { useState } from 'react';
 import { stripeService } from '../../../services/api';
-
-// Usamos un ícono de check simple para replicar el de la imagen
-const CheckIcon = () => (
-    <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-    </svg>
-);
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiCheckCircle, FiStar, FiZap, FiShield, FiCreditCard, FiArrowRight, FiRotateCw, FiSettings } from 'react-icons/fi';
+import AppNavbar from '../../../components/AppNavbar';
+import AnimatedBackground from '../../../components/AnimatedBackground';
+import GlassCard from '../../../components/GlassCard';
 
 const plans = [
-    { name: 'Starter', price: '9', features: ['10 leads al mes', 'Acceso a la plataforma', 'Soporte por email'], priceId: 'price_1RXmTOGMLNY8JgDpxAl1QfGx', isPopular: false },
-    { name: 'Pro', price: '29', features: ['50 leads al mes', 'Acceso a la plataforma', 'Soporte prioritario por email', 'Estadísticas básicas'], priceId: 'price_1RXmTdGMLNY8JgDptfVeN5bD', isPopular: true },
-    { name: 'Pro Superior', price: '49', features: ['80 leads al mes', 'Soporte 24/7 con respuesta garantizada', 'Estadísticas avanzadas', 'Asesoramiento personalizado'], priceId: 'price_1RXmTnGMLNY8JgDp8yDvflG4', isPopular: false }
+    { name: 'Starter', price: '9', features: ['10 leads al mes', 'Acceso a la plataforma', 'Soporte por email'], priceId: 'price_1RXmTOGMLNY8JgDpxAl1QfGx', isPopular: false, gradient: 'from-gray-700 to-gray-800' },
+    { name: 'Pro', price: '29', features: ['50 leads al mes', 'Acceso a la plataforma', 'Soporte prioritario por email', 'Estadísticas básicas'], priceId: 'price_1RXmTdGMLNY8JgDptfVeN5bD', isPopular: true, gradient: 'from-blue-600 to-purple-600' },
+    { name: 'Pro Superior', price: '49', features: ['80 leads al mes', 'Soporte 24/7 con respuesta garantizada', 'Estadísticas avanzadas', 'Asesoramiento personalizado'], priceId: 'price_1RXmTnGMLNY8JgDp8yDvflG4', isPopular: false, gradient: 'from-pink-600 to-red-600' }
 ];
 
 const leadPackages = [
@@ -90,193 +88,151 @@ const SubscriptionsPage = () => {
     };
 
     return (
-        <div className="bg-white text-gray-800 min-h-screen py-12 px-4">
-            <div className="max-w-5xl mx-auto">
-                <div className="text-center mb-16">
-                    <h1 className="text-4xl md:text-5xl font-bold text-gray-900">
-                        Un Plan Para Cada Necesidad
-                    </h1>
-                    <p className="text-lg text-gray-600 mt-4 max-w-2xl mx-auto">
-                        Accede a leads de calidad y haz crecer tu cartera. Nuestros planes están diseñados para prestamistas serios y comprometidos.
-                    </p>
-                </div>
-
-                <div className="text-center mb-12">
-                    <button 
-                        onClick={handleManageSubscription}
-                        disabled={isManaging}
-                        className="bg-gray-800 text-white font-bold py-3 px-8 rounded-lg transition duration-300 ease-in-out hover:bg-gray-900 disabled:bg-gray-600 disabled:cursor-wait"
-                    >
-                        {isManaging ? 'Abriendo...' : 'Gestionar Mi Suscripción'}
-                    </button>
-                    <p className="text-sm text-gray-500 mt-2">¿Ya tienes un plan? Cancela, actualiza tu plan o método de pago aquí.</p>
-                </div>
-
-                {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6 max-w-3xl mx-auto" role="alert">
-                        <strong className="font-bold">Error: </strong>
-                        <span className="block sm:inline">{error}</span>
-                    </div>
-                )}
-
-                {/* Sección principal: Planes de Suscripción */}
-                <div className="text-center mb-12">
-                    <h2 className="text-4xl font-bold text-gray-900 mb-4">Planes de Suscripción Mensual</h2>
-                    <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                        La mejor opción para prestamistas serios. Flujo constante de leads verificados con soporte completo.
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-                    {plans.map((plan) => (
-                        <div
-                            key={plan.name}
-                            className={`relative bg-white rounded-2xl shadow-lg p-8 transition-transform duration-300 transform hover:shadow-2xl ${
-                                plan.isPopular ? 'border-2 border-blue-500' : 'border border-gray-200'
-                            }`}
+        <div>
+            <AppNavbar />
+            <AnimatedBackground particleCount={25}>
+                <div className="min-h-screen pt-20 px-4">
+                    <div className="max-w-7xl mx-auto space-y-12">
+                        <motion.div 
+                            className="text-center"
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8 }}
                         >
-                            {plan.isPopular && (
-                                <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
-                                    <span className="bg-gradient-to-r from-pink-500 to-orange-400 text-white text-xs font-semibold px-4 py-1.5 rounded-full uppercase tracking-wider">Más Popular</span>
-                                </div>
-                            )}
-
-                            <div className="text-center">
-                                <h2 className="font-bold text-2xl text-gray-900">{plan.name}</h2>
-                                <div className="my-6">
-                                    <span className="text-5xl font-extrabold text-gray-900">€{plan.price}</span>
-                                    <span className="ml-1 text-xl text-gray-500">/mes</span>
-                                </div>
-                            </div>
-                            
-                            <ul className="space-y-4 my-8">
-                                {plan.features.map((feature, index) => (
-                                    <li key={index} className="flex items-center">
-                                        <CheckIcon />
-                                        <span className="ml-3 text-gray-700">{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <button
-                                onClick={() => handleSubscribe(plan)}
-                                disabled={isLoading && selectedPlan === plan.priceId}
-                                className={`w-full font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out text-lg ${
-                                    plan.isPopular
-                                    ? 'bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50'
-                                    : 'bg-gray-800 text-white hover:bg-gray-900'
-                                } ${
-                                    isLoading && selectedPlan === plan.priceId ? 'opacity-70 cursor-wait' : ''
-                                }`}
-                            >
-                                {isLoading && selectedPlan === plan.priceId ? 'Procesando...' : 'Suscribirme Ahora'}
-                            </button>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Separador visual */}
-                <div className="my-20">
-                    <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-300"></div>
-                        </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-6 bg-white text-gray-500 font-medium">¿Prefieres comprar leads individuales?</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Sección secundaria: Compras de Leads */}
-                <div className="mb-16">
-                    <div className="text-center mb-12">
-                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Compras Individuales de Leads</h3>
-                        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                            Para necesidades puntuales o para probar nuestros servicios antes de suscribirte
-                        </p>
-                    </div>
-
-                    {/* LEADS CON IA como opción destacada pero secundaria */}
-                    <div className="mb-12">
-                        <div className="text-center mb-6">
-                            <h4 className="text-xl font-semibold text-gray-900 mb-2">🤖 Leads con Inteligencia Artificial</h4>
-                            <p className="text-gray-600">
-                                Datos verificados extraídos automáticamente de sitios paraguayos
+                            <h1 className="text-4xl md:text-6xl font-bold text-white">
+                                Un Plan Para Cada Necesidad
+                            </h1>
+                            <p className="text-lg text-white/70 mt-4 max-w-3xl mx-auto">
+                                Accede a leads de calidad y haz crecer tu cartera. Nuestros planes están diseñados para prestamistas serios y comprometidos.
                             </p>
-                        </div>
-                        
-                        {aiLeadPackages.map((pkg) => (
-                            <div key={pkg.name} className="max-w-xl mx-auto mb-8">
-                                <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-lg p-6 border border-blue-200">
-                                    <div className="text-center mb-4">
-                                        <h5 className="font-bold text-xl text-gray-900 mb-2">{pkg.name}</h5>
-                                        <div className="flex items-center justify-center gap-2 mb-3">
-                                            <span className="text-3xl font-extrabold text-blue-600">€{pkg.price}</span>
-                                            <div className="text-left">
-                                                <div className="text-sm text-gray-600">por {pkg.quantity} leads</div>
-                                                <div className="text-xs text-green-600 font-semibold">€0.50 por lead</div>
+                        </motion.div>
+
+                        <motion.div
+                             initial={{ opacity: 0, y: 30 }}
+                             animate={{ opacity: 1, y: 0 }}
+                             transition={{ delay: 0.2, duration: 0.8 }}
+                        >
+                            <GlassCard className="text-center">
+                                <h2 className="text-xl font-semibold text-white mb-2">Gestiona tu Suscripción</h2>
+                                <p className="text-white/60 mb-4">¿Ya tienes un plan? Cancela, actualiza tu plan o método de pago aquí.</p>
+                                <motion.button 
+                                    onClick={handleManageSubscription}
+                                    disabled={isManaging}
+                                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold rounded-lg transition duration-300 ease-in-out disabled:opacity-60"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    {isManaging ? (
+                                        <span className="flex items-center"><FiRotateCw className="animate-spin mr-2" /> Abriendo...</span>
+                                    ) : (
+                                        <span className="flex items-center"><FiSettings className="mr-2" /> Portal de Cliente</span>
+                                    )}
+                                </motion.button>
+                            </GlassCard>
+                        </motion.div>
+
+                        {error && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-red-500/20 border border-red-500/30 text-red-300 px-4 py-3 rounded-lg relative max-w-3xl mx-auto" role="alert">
+                                <strong className="font-bold">Error: </strong>
+                                <span className="block sm:inline">{error}</span>
+                            </motion.div>
+                        )}
+
+                        {/* Planes de Suscripción */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+                            {plans.map((plan, index) => (
+                                <motion.div
+                                    key={plan.name}
+                                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    transition={{ delay: 0.4 + index * 0.1 }}
+                                >
+                                    <GlassCard className={`relative overflow-hidden border-2 ${plan.isPopular ? 'border-blue-500' : 'border-white/20'}`}>
+                                        {plan.isPopular && (
+                                            <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
+                                                <span className="bg-gradient-to-r from-pink-500 to-orange-400 text-white text-xs font-semibold px-4 py-1.5 rounded-full uppercase tracking-wider">Más Popular</span>
                                             </div>
+                                        )}
+                                        <div className="p-8 text-center">
+                                            <h2 className="font-bold text-2xl text-white">{plan.name}</h2>
+                                            <div className="my-6">
+                                                <span className="text-5xl font-extrabold text-white">€{plan.price}</span>
+                                                <span className="ml-1 text-xl text-white/70">/mes</span>
+                                            </div>
+                                            <ul className="space-y-4 my-8 text-left">
+                                                {plan.features.map((feature, i) => (
+                                                    <li key={i} className="flex items-center text-white/90">
+                                                        <FiCheckCircle className="w-5 h-5 text-green-400 mr-3" />
+                                                        <span>{feature}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            <motion.button
+                                                onClick={() => handleSubscribe(plan)}
+                                                disabled={isLoading && selectedPlan === plan.priceId}
+                                                className={`w-full font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out text-lg bg-gradient-to-r ${plan.gradient} text-white disabled:opacity-60`}
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                                            >
+                                                {isLoading && selectedPlan === plan.priceId ? 'Procesando...' : 'Suscribirme Ahora'}
+                                            </motion.button>
+                                        </div>
+                                    </GlassCard>
+                                </motion.div>
+                            ))}
+                        </div>
+
+                        {/* Compras One-Time */}
+                        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
+                            <GlassCard>
+                                <h3 className="text-2xl font-bold text-white text-center mb-6">Compras Individuales</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {aiLeadPackages.map((pkg) => (
+                                        <div key={pkg.name} className="bg-white/10 p-6 rounded-xl border border-white/20">
+                                            <h4 className="font-bold text-xl text-white mb-2">{pkg.name}</h4>
+                                            <p className="text-white/70 mb-4">{pkg.description}</p>
+                                            <div className="flex items-baseline mb-4">
+                                                <span className="text-4xl font-extrabold text-white">€{pkg.price}</span>
+                                                <span className="ml-2 text-white/70">/ {pkg.quantity} leads</span>
+                                            </div>
+                                            <motion.button
+                                                onClick={() => handleOneTimePurchase(pkg)}
+                                                disabled={isBuyingPackage === pkg.priceId}
+                                                className="w-full bg-gradient-to-r from-green-500 to-cyan-500 text-white font-semibold py-3 rounded-lg disabled:opacity-60"
+                                                whileHover={{ scale: 1.05 }}
+                                            >
+                                                {isBuyingPackage === pkg.priceId ? 'Procesando...' : 'Comprar Paquete'}
+                                            </motion.button>
+                                        </div>
+                                    ))}
+                                    <div className="bg-white/5 p-6 rounded-xl border border-white/10">
+                                        <h4 className="font-bold text-xl text-white mb-2">Paquetes Básicos</h4>
+                                        <p className="text-white/70 mb-4">Para necesidades puntuales sin IA.</p>
+                                        <div className="space-y-4">
+                                            {leadPackages.map(pkg => (
+                                                <div key={pkg.name} className="flex justify-between items-center">
+                                                    <span className="text-white/80">{pkg.name}</span>
+                                                    <motion.button
+                                                        onClick={() => handleOneTimePurchase(pkg)}
+                                                        disabled={isBuyingPackage === pkg.priceId}
+                                                        className="px-4 py-2 text-sm bg-gray-600 text-white rounded-lg disabled:opacity-60"
+                                                        whileHover={{ scale: 1.05 }}
+                                                    >
+                                                         €{pkg.price}
+                                                    </motion.button>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-6 text-sm">
-                                        {pkg.features.map((feature, index) => (
-                                            <div key={index} className="flex items-center">
-                                                <CheckIcon />
-                                                <span className="ml-2 text-gray-700">{feature}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <div className="text-center">
-                                        <button
-                                            onClick={() => handleOneTimePurchase(pkg)}
-                                            disabled={isBuyingPackage === pkg.priceId}
-                                            className="bg-gradient-to-r from-blue-600 to-green-600 text-white font-semibold py-3 px-8 rounded-lg transition duration-300 ease-in-out hover:from-blue-700 hover:to-green-700 disabled:opacity-70 disabled:cursor-wait"
-                                        >
-                                            {isBuyingPackage === pkg.priceId ? '🔄 Procesando...' : '🛒 Comprar Leads con IA'}
-                                        </button>
-                                        <p className="text-xs text-gray-500 mt-2">
-                                            💳 Pago único • ⚡ Entrega inmediata • 🔒 Datos 100% reales
-                                        </p>
-                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Leads básicos sin IA */}
-                    <div className="max-w-2xl mx-auto">
-                        <div className="text-center mb-6">
-                            <h4 className="text-lg font-semibold text-gray-800">📋 Leads Básicos (Sin IA)</h4>
-                            <p className="text-gray-600 text-sm">
-                                Leads básicos sin verificación automática - Para suscriptores existentes
-                            </p>
-                        </div>
-                        
-                        <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-                                {leadPackages.map((pkg) => (
-                                    <div key={pkg.name} className="text-center p-4 bg-white rounded-lg border border-gray-300 flex-1 max-w-xs">
-                                        <span className="font-semibold text-lg text-gray-800">{pkg.price} Lead{pkg.price > 1 ? 's' : ''}</span>
-                                        <div className="text-sm text-gray-600 mb-3">€{pkg.price}</div>
-                                        <button
-                                            onClick={() => handleOneTimePurchase(pkg)}
-                                            disabled={isBuyingPackage === pkg.priceId}
-                                            className="w-full bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition duration-300 ease-in-out hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-wait text-sm"
-                                        >
-                                            {isBuyingPackage === pkg.priceId ? 'Procesando...' : 'Comprar'}
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                            <p className="text-xs text-gray-500 mt-4 text-center">
-                                ⚠️ Estos leads no incluyen verificación con IA ni garantía de datos reales
-                            </p>
-                        </div>
+                            </GlassCard>
+                        </motion.div>
                     </div>
                 </div>
-            </div>
+            </AnimatedBackground>
         </div>
     );
 };

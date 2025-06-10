@@ -5,13 +5,17 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useForm } from 'react-hook-form';
 import Link from 'next/link';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import { FiUser, FiMail, FiLock, FiPhone, FiMapPin, FiDollarSign, FiUsers } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiUser, FiMail, FiLock, FiPhone, FiMapPin, FiDollarSign, FiUsers, FiEye, FiEyeOff, FiCheck, FiAlertCircle, FiArrowRight } from 'react-icons/fi';
+import AnimatedBackground from '../../components/AnimatedBackground';
+import GlassCard from '../../components/GlassCard';
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [userType, setUserType] = useState('borrower');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { register: registerUser, isAuthenticated } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,253 +58,463 @@ export default function RegisterPage() {
   };
 
   const password = watch('password');
+  const confirmPassword = watch('confirm_password');
+
+  const getPasswordStrength = (password) => {
+    if (!password) return 0;
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    return strength;
+  };
+
+  const passwordStrength = getPasswordStrength(password);
+  const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500'];
+  const strengthLabels = ['Muy débil', 'Débil', 'Regular', 'Fuerte', 'Muy fuerte'];
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">
-            Crear cuenta en Prestame
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {userType === 'borrower' 
-              ? 'Regístrate para solicitar préstamos' 
-              : 'Regístrate para ofrecer préstamos'
-            }
-          </p>
-        </div>
-
-        {/* Selector de tipo de usuario */}
-        <div className="flex rounded-xl bg-gray-100 p-1">
-          <button
-            type="button"
-            onClick={() => setUserType('borrower')}
-            className={`flex-1 flex items-center justify-center py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-              userType === 'borrower'
-                ? 'bg-white text-primary-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <FiDollarSign className="mr-2 h-4 w-4" />
-            Quiero un préstamo
-          </button>
-          <button
-            type="button"
-            onClick={() => setUserType('lender')}
-            className={`flex-1 flex items-center justify-center py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-              userType === 'lender'
-                ? 'bg-white text-primary-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <FiUsers className="mr-2 h-4 w-4" />
-            Quiero dar préstamos
-          </button>
-        </div>
-
-        <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl">
-              {error}
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre
-              </label>
-              <div className="relative">
-                <FiUser className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  {...register('first_name', { required: 'El nombre es requerido' })}
-                  type="text"
-                  className="input-field pl-10"
-                  placeholder="Tu nombre"
-                />
-              </div>
-              {errors.first_name && (
-                <p className="mt-1 text-sm text-red-600">{errors.first_name.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
-                Apellido
-              </label>
-              <div className="relative">
-                <FiUser className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  {...register('last_name', { required: 'El apellido es requerido' })}
-                  type="text"
-                  className="input-field pl-10"
-                  placeholder="Tu apellido"
-                />
-              </div>
-              {errors.last_name && (
-                <p className="mt-1 text-sm text-red-600">{errors.last_name.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Correo electrónico
-            </label>
-            <div className="relative">
-              <FiMail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <input
-                {...register('email', { 
-                  required: 'El correo es requerido',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Correo electrónico inválido'
-                  }
-                })}
-                type="email"
-                className="input-field pl-10"
-                placeholder="tu@email.com"
-              />
-            </div>
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-              Teléfono
-            </label>
-            <div className="relative">
-              <FiPhone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <input
-                {...register('phone', { required: 'El teléfono es requerido' })}
-                type="tel"
-                className="input-field pl-10"
-                placeholder="0981 123 456"
-              />
-            </div>
-            {errors.phone && (
-              <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
-                Ciudad
-              </label>
-              <div className="relative">
-                <FiMapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  {...register('city')}
-                  type="text"
-                  className="input-field pl-10"
-                  placeholder="Asunción"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
-                Departamento
-              </label>
-              <select
-                {...register('department')}
-                className="input-field"
-              >
-                <option value="">Seleccionar</option>
-                <option value="Asunción">Asunción</option>
-                <option value="Central">Central</option>
-                <option value="Alto Paraná">Alto Paraná</option>
-                <option value="Itapúa">Itapúa</option>
-                <option value="Caaguazú">Caaguazú</option>
-                <option value="Paraguarí">Paraguarí</option>
-                <option value="San Pedro">San Pedro</option>
-                <option value="Cordillera">Cordillera</option>
-                <option value="Guairá">Guairá</option>
-                <option value="Caazapá">Caazapá</option>
-                <option value="Misiones">Misiones</option>
-                <option value="Ñeembucú">Ñeembucú</option>
-                <option value="Amambay">Amambay</option>
-                <option value="Canindeyú">Canindeyú</option>
-                <option value="Presidente Hayes">Presidente Hayes</option>
-                <option value="Concepción">Concepción</option>
-                <option value="Alto Paraguay">Alto Paraguay</option>
-                <option value="Boquerón">Boquerón</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Contraseña
-            </label>
-            <div className="relative">
-              <FiLock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <input
-                {...register('password', { 
-                  required: 'La contraseña es requerida',
-                  minLength: {
-                    value: 8,
-                    message: 'La contraseña debe tener al menos 8 caracteres'
-                  }
-                })}
-                type="password"
-                className="input-field pl-10"
-                placeholder="••••••••"
-              />
-            </div>
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-              Confirmar contraseña
-            </label>
-            <div className="relative">
-              <FiLock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <input
-                {...register('confirmPassword', { 
-                  required: 'Confirma tu contraseña',
-                  validate: value => value === password || 'Las contraseñas no coinciden'
-                })}
-                type="password"
-                className="input-field pl-10"
-                placeholder="••••••••"
-              />
-            </div>
-            {errors.confirmPassword && (
-              <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
-            )}
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full btn-primary flex items-center justify-center"
+    <AnimatedBackground particleCount={25}>
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <div className="w-full max-w-2xl">
+          <GlassCard className="relative overflow-hidden">
+            {/* Header */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="text-center mb-8"
             >
-              {loading ? (
-                <LoadingSpinner size="sm" text="" />
-              ) : (
-                'Crear cuenta'
-              )}
-            </button>
-          </div>
+              <motion.div
+                className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl mb-6"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FiUser className="w-8 h-8 text-white" />
+              </motion.div>
+              
+              <h1 className="text-3xl font-bold text-white mb-2">
+                Únete a Prestame
+              </h1>
+              <p className="text-white/70 text-sm leading-relaxed">
+                {userType === 'borrower' 
+                  ? 'Regístrate para acceder a préstamos inteligentes y construir tu futuro financiero' 
+                  : 'Regístrate para invertir y generar ingresos pasivos con tus ahorros'
+                }
+              </p>
+            </motion.div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              ¿Ya tienes una cuenta?{' '}
-              <Link href="/login" className="font-medium text-primary-600 hover:text-primary-500">
-                Inicia sesión
-              </Link>
-            </p>
-          </div>
-        </form>
+            {/* User Type Selector */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="mb-8"
+            >
+              <div className="flex rounded-2xl bg-white/10 p-1 backdrop-blur-sm border border-white/20">
+                <motion.button
+                  type="button"
+                  onClick={() => setUserType('borrower')}
+                  className={`flex-1 flex items-center justify-center py-3 px-4 rounded-xl text-sm font-medium transition-all duration-300 ${
+                    userType === 'borrower'
+                      ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-lg'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <FiDollarSign className="mr-2 h-5 w-5" />
+                  Quiero un préstamo
+                </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={() => setUserType('lender')}
+                  className={`flex-1 flex items-center justify-center py-3 px-4 rounded-xl text-sm font-medium transition-all duration-300 ${
+                    userType === 'lender'
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <FiUsers className="mr-2 h-5 w-5" />
+                  Quiero dar préstamos
+                </motion.button>
+              </div>
+            </motion.div>
+
+            <motion.form
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+            >
+              {/* Name Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5, duration: 0.6 }}
+                >
+                  <label className="block text-white/90 text-sm font-medium mb-2">
+                    Nombre
+                  </label>
+                  <div className="relative">
+                    <FiUser className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
+                    <motion.input
+                      {...register('first_name', { required: 'El nombre es requerido' })}
+                      type="text"
+                      className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
+                      placeholder="Tu nombre"
+                      whileFocus={{ scale: 1.02 }}
+                    />
+                  </div>
+                  <AnimatePresence>
+                    {errors.first_name && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="mt-2 text-red-400 text-sm flex items-center space-x-1"
+                      >
+                        <FiAlertCircle className="w-4 h-4" />
+                        <span>{errors.first_name.message}</span>
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6, duration: 0.6 }}
+                >
+                  <label className="block text-white/90 text-sm font-medium mb-2">
+                    Apellido
+                  </label>
+                  <div className="relative">
+                    <FiUser className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
+                    <motion.input
+                      {...register('last_name', { required: 'El apellido es requerido' })}
+                      type="text"
+                      className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
+                      placeholder="Tu apellido"
+                      whileFocus={{ scale: 1.02 }}
+                    />
+                  </div>
+                  <AnimatePresence>
+                    {errors.last_name && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="mt-2 text-red-400 text-sm flex items-center space-x-1"
+                      >
+                        <FiAlertCircle className="w-4 h-4" />
+                        <span>{errors.last_name.message}</span>
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              </div>
+
+              {/* Email Field */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.7, duration: 0.6 }}
+              >
+                <label className="block text-white/90 text-sm font-medium mb-2">
+                  Correo Electrónico
+                </label>
+                <div className="relative">
+                  <FiMail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
+                  <motion.input
+                    {...register('email', { 
+                      required: 'El correo es requerido',
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: 'Correo electrónico inválido'
+                      }
+                    })}
+                    type="email"
+                    className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
+                    placeholder="tu@email.com"
+                    whileFocus={{ scale: 1.02 }}
+                  />
+                </div>
+                <AnimatePresence>
+                  {errors.email && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="mt-2 text-red-400 text-sm flex items-center space-x-1"
+                    >
+                      <FiAlertCircle className="w-4 h-4" />
+                      <span>{errors.email.message}</span>
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+
+              {/* Phone and City Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.8, duration: 0.6 }}
+                >
+                  <label className="block text-white/90 text-sm font-medium mb-2">
+                    Teléfono
+                  </label>
+                  <div className="relative">
+                    <FiPhone className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
+                    <motion.input
+                      {...register('phone', { required: 'El teléfono es requerido' })}
+                      type="tel"
+                      className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
+                      placeholder="0981 123 456"
+                      whileFocus={{ scale: 1.02 }}
+                    />
+                  </div>
+                  <AnimatePresence>
+                    {errors.phone && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="mt-2 text-red-400 text-sm flex items-center space-x-1"
+                      >
+                        <FiAlertCircle className="w-4 h-4" />
+                        <span>{errors.phone.message}</span>
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.9, duration: 0.6 }}
+                >
+                  <label className="block text-white/90 text-sm font-medium mb-2">
+                    Ciudad
+                  </label>
+                  <div className="relative">
+                    <FiMapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
+                    <motion.input
+                      {...register('city')}
+                      type="text"
+                      className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
+                      placeholder="Asunción"
+                      whileFocus={{ scale: 1.02 }}
+                    />
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* Password Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.0, duration: 0.6 }}
+                >
+                  <label className="block text-white/90 text-sm font-medium mb-2">
+                    Contraseña
+                  </label>
+                  <div className="relative">
+                    <FiLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
+                    <motion.input
+                      {...register('password', { 
+                        required: 'La contraseña es requerida',
+                        minLength: {
+                          value: 8,
+                          message: 'La contraseña debe tener al menos 8 caracteres'
+                        }
+                      })}
+                      type={showPassword ? 'text' : 'password'}
+                      className="w-full pl-12 pr-12 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
+                      placeholder="••••••••"
+                      whileFocus={{ scale: 1.02 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white transition-colors"
+                    >
+                      {showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  
+                  {/* Password Strength Indicator */}
+                  {password && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-3"
+                    >
+                      <div className="flex space-x-1 mb-2">
+                        {[...Array(5)].map((_, i) => (
+                          <div
+                            key={i}
+                            className={`h-2 flex-1 rounded-full transition-all duration-300 ${
+                              i < passwordStrength ? strengthColors[passwordStrength - 1] : 'bg-white/20'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-xs text-white/70">
+                        Seguridad: <span className="font-medium">{strengthLabels[passwordStrength - 1] || 'Muy débil'}</span>
+                      </p>
+                    </motion.div>
+                  )}
+
+                  <AnimatePresence>
+                    {errors.password && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="mt-2 text-red-400 text-sm flex items-center space-x-1"
+                      >
+                        <FiAlertCircle className="w-4 h-4" />
+                        <span>{errors.password.message}</span>
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.1, duration: 0.6 }}
+                >
+                  <label className="block text-white/90 text-sm font-medium mb-2">
+                    Confirmar Contraseña
+                  </label>
+                  <div className="relative">
+                    <FiLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
+                    <motion.input
+                      {...register('confirm_password', { 
+                        required: 'Confirma tu contraseña',
+                        validate: value => value === password || 'Las contraseñas no coinciden'
+                      })}
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      className="w-full pl-12 pr-12 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
+                      placeholder="••••••••"
+                      whileFocus={{ scale: 1.02 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white transition-colors"
+                    >
+                      {showConfirmPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
+                    </button>
+                  </div>
+
+                  {/* Password Match Indicator */}
+                  {confirmPassword && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-2"
+                    >
+                      <p className={`text-xs ${password === confirmPassword ? 'text-green-400' : 'text-red-400'}`}>
+                        {password === confirmPassword ? '✓ Las contraseñas coinciden' : '✗ Las contraseñas no coinciden'}
+                      </p>
+                    </motion.div>
+                  )}
+
+                  <AnimatePresence>
+                    {errors.confirm_password && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="mt-2 text-red-400 text-sm flex items-center space-x-1"
+                      >
+                        <FiAlertCircle className="w-4 h-4" />
+                        <span>{errors.confirm_password.message}</span>
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              </div>
+
+              {/* Submit Button */}
+              <motion.button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.2, duration: 0.6 }}
+              >
+                {loading ? (
+                  <motion.div
+                    className="flex items-center justify-center space-x-2"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <motion.div
+                      className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    />
+                    <span>Creando cuenta...</span>
+                  </motion.div>
+                ) : (
+                  <div className="flex items-center justify-center space-x-2">
+                    <span>Crear Cuenta</span>
+                    <FiArrowRight className="w-5 h-5" />
+                  </div>
+                )}
+              </motion.button>
+            </motion.form>
+
+            {/* Error Message */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  className="mt-4 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl flex items-center space-x-3"
+                >
+                  <FiAlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  <p className="text-red-200 text-sm">{error}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Login Link */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.3, duration: 0.6 }}
+              className="mt-8 text-center"
+            >
+              <p className="text-white/70 text-sm">
+                ¿Ya tienes una cuenta?{' '}
+                <Link
+                  href="/login"
+                  className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                >
+                  Inicia sesión aquí
+                </Link>
+              </p>
+            </motion.div>
+          </GlassCard>
+        </div>
       </div>
-    </div>
+    </AnimatedBackground>
   );
 } 

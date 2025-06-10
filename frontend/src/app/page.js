@@ -1,231 +1,288 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { FiDollarSign, FiShield, FiZap, FiUsers, FiTrendingUp, FiStar, FiArrowRight, FiCheck } from 'react-icons/fi';
 import Link from 'next/link';
-import { FaRobot } from 'react-icons/fa';
+import { useRef } from 'react';
+import AnimatedBackground from '../components/AnimatedBackground';
+import GlassCard from '../components/GlassCard';
+import Navbar from '../components/Navbar';
 
-export default function WelcomePage() {
-  const router = useRouter();
-  const [isVisible, setIsVisible] = useState(false);
+export default function HomePage() {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"]
+  });
 
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+  const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
 
-  const handleGetStarted = () => {
-    router.push('/register');
-  };
+  const features = [
+    {
+      icon: FiDollarSign,
+      title: "Préstamos Inteligentes",
+      description: "Conectamos prestamistas y prestatarios con tecnología de vanguardia y tasas competitivas.",
+      color: "from-green-500 to-emerald-600"
+    },
+    {
+      icon: FiShield,
+      title: "Seguridad Total",
+      description: "Protección avanzada de datos y transacciones seguras con encriptación de nivel bancario.",
+      color: "from-blue-500 to-cyan-600"
+    },
+    {
+      icon: FiZap,
+      title: "Proceso Rápido",
+      description: "Aprobación en minutos, no en días. Tecnología que acelera tu futuro financiero.",
+      color: "from-purple-500 to-pink-600"
+    },
+    {
+      icon: FiUsers,
+      title: "Comunidad Confiable",
+      description: "Miles de usuarios satisfechos construyendo juntos un ecosistema financiero sólido.",
+      color: "from-orange-500 to-red-600"
+    }
+  ];
 
-  const handleLogin = () => {
-    router.push('/login');
-  };
-
-  const handleLearnMore = () => {
-    router.push('/how-it-works');
-  };
+  const testimonials = [
+    {
+      name: "María González",
+      role: "Emprendedora",
+      content: "Prestame me ayudó a conseguir el capital que necesitaba para mi negocio. El proceso fue increíblemente rápido y transparente.",
+      rating: 5
+    },
+    {
+      name: "Carlos Rodríguez",
+      role: "Inversionista",
+      content: "Como prestamista, he encontrado en Prestame la plataforma perfecta para diversificar mis inversiones con excelentes retornos.",
+      rating: 5
+    },
+    {
+      name: "Ana Martínez",
+      role: "Profesional",
+      content: "La interfaz es intuitiva y el soporte al cliente excepcional. Definitivamente la mejor plataforma de préstamos P2P.",
+      rating: 5
+    }
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white">
-      {/* Navbar mejorado */}
-      <nav className="sticky top-0 z-50 flex justify-between items-center px-8 py-6 bg-slate-900/50 backdrop-blur-sm border-b border-white/10">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-            <span className="text-white font-bold text-xl">P</span>
-          </div>
-          <span className="font-bold text-2xl">Prestame</span>
-        </div>
-        
-        <div className="flex items-center space-x-3">
-          <button 
-            onClick={handleLogin}
-            className="hover:text-blue-300 transition-colors duration-300 px-6 py-2.5 rounded-lg hover:bg-white/10 font-medium"
-          >
-            Iniciar Sesión
-          </button>
-          <button 
-            onClick={handleGetStarted}
-            className="bg-blue-600 hover:bg-blue-700 px-6 py-2.5 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl border border-blue-500"
-          >
-            Registrarse
-          </button>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <main>
-        <section className={`flex flex-col items-center justify-center min-h-[80vh] px-8 text-center transition-all duration-1000 ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-        }`}>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 max-w-4xl">
-            La plataforma de préstamos 
-            <span className="text-blue-400"> peer-to-peer</span> más confiable de Paraguay
-          </h1>
-          
-          <p className="text-xl text-gray-300 mb-8 max-w-2xl">
-            Conectamos prestatarios con prestamistas de forma segura, rápida y transparente.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 mb-16">
-            <button 
-              onClick={handleGetStarted}
-              className="bg-green-600 hover:bg-green-700 font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl"
+    <div ref={ref}>
+      <Navbar />
+      
+      <AnimatedBackground particleCount={30}>
+        {/* Hero Section */}
+        <motion.section 
+          style={{ y, opacity }}
+          className="min-h-screen flex items-center justify-center px-4 pt-16"
+        >
+          <div className="max-w-6xl mx-auto text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, ease: "easeOut" }}
             >
-              Comenzar Ahora
-            </button>
-            <button 
-              onClick={handleLearnMore}
-              className="border-2 border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white font-bold py-4 px-8 rounded-lg transition-all duration-300"
-            >
-              Cómo Funciona
-            </button>
-          </div>
+              <motion.h1 
+                className="text-6xl md:text-8xl font-bold text-white mb-6 leading-tight"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.8 }}
+              >
+                El Futuro de los
+                <motion.span 
+                  className="block bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5, duration: 0.8 }}
+                >
+                  Préstamos
+                </motion.span>
+              </motion.h1>
+              
+              <motion.p 
+                className="text-xl md:text-2xl text-white/80 mb-12 max-w-3xl mx-auto leading-relaxed"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7, duration: 0.8 }}
+              >
+                Conectamos personas que necesitan capital con inversionistas inteligentes. 
+                Tecnología blockchain, seguridad bancaria, y la mejor experiencia de usuario.
+              </motion.p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl w-full">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-              <div className="text-3xl font-bold mb-2">+1,000</div>
-              <div className="text-gray-300">Préstamos Exitosos</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-              <div className="text-3xl font-bold mb-2">₲50M+</div>
-              <div className="text-gray-300">Capital Prestado</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-              <div className="text-3xl font-bold mb-2">98%</div>
-              <div className="text-gray-300">Satisfacción</div>
-            </div>
+              <motion.div 
+                className="flex flex-col sm:flex-row gap-6 justify-center items-center"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.9, duration: 0.8 }}
+              >
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link
+                    href="/register?type=borrower"
+                    className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center space-x-2"
+                  >
+                    <FiDollarSign className="w-5 h-5" />
+                    <span>Solicitar Préstamo</span>
+                    <FiArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </motion.div>
+                
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link
+                    href="/register?type=lender"
+                    className="group px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white font-semibold rounded-2xl transition-all duration-300 flex items-center space-x-2"
+                  >
+                    <FiTrendingUp className="w-5 h-5" />
+                    <span>Invertir Ahora</span>
+                    <FiArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </motion.div>
+              </motion.div>
+            </motion.div>
           </div>
-        </section>
+        </motion.section>
+      </AnimatedBackground>
 
         {/* Features Section */}
-        <section className="py-20 px-8 bg-white/5">
+      <section className="py-20 px-4 bg-gradient-to-b from-slate-900 to-slate-800">
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-4xl font-bold text-center mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
               ¿Por qué elegir Prestame?
             </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-blue-400/50 transition-all duration-300">
-                <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
+            <p className="text-xl text-white/70 max-w-3xl mx-auto">
+              Revolucionamos el mundo de los préstamos con tecnología de vanguardia y un enfoque centrado en el usuario.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -10 }}
+                className="group"
+              >
+                <GlassCard className="h-full text-center group-hover:bg-white/15 transition-all duration-300">
+                  <motion.div
+                    className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r ${feature.color} rounded-2xl mb-6`}
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                  >
+                    <feature.icon className="w-8 h-8 text-white" />
+                  </motion.div>
+                  
+                  <h3 className="text-xl font-semibold text-white mb-4">
+                    {feature.title}
+                  </h3>
+                  <p className="text-white/70 leading-relaxed">
+                    {feature.description}
+                  </p>
+                </GlassCard>
+              </motion.div>
+            ))}
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">100% Seguro</h3>
-                <p className="text-gray-300">Tecnología de encriptación avanzada para proteger tus datos y transacciones.</p>
+              </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 px-4 bg-gradient-to-b from-slate-800 to-slate-900">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              Lo que dicen nuestros usuarios
+            </h2>
+            <p className="text-xl text-white/70 max-w-3xl mx-auto">
+              Miles de personas ya confían en Prestame para sus necesidades financieras.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -5 }}
+              >
+                <GlassCard className="h-full">
+                  <div className="flex items-center mb-4">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <FiStar key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                    ))}
               </div>
 
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-blue-400/50 transition-all duration-300">
-                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
+                  <p className="text-white/80 mb-6 italic leading-relaxed">
+                    "{testimonial.content}"
+                  </p>
+                  
+                  <div className="border-t border-white/20 pt-4">
+                    <h4 className="text-white font-semibold">{testimonial.name}</h4>
+                    <p className="text-white/60 text-sm">{testimonial.role}</p>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Mejores Tasas</h3>
-                <p className="text-gray-300">Tasas de interés competitivas para prestatarios y prestamistas.</p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-blue-400/50 transition-all duration-300">
-                <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3">Proceso Rápido</h3>
-                <p className="text-gray-300">Aprobación en minutos con nuestro sistema automatizado.</p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-blue-400/50 transition-all duration-300">
-                <div className="w-12 h-12 bg-yellow-600 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3">Comunidad</h3>
-                <p className="text-gray-300">Únete a una comunidad de paraguayos que se ayudan mutuamente.</p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-blue-400/50 transition-all duration-300">
-                <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3">Score Katupyry</h3>
-                <p className="text-gray-300">Sistema de puntuación único que evalúa el riesgo de manera justa.</p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-blue-400/50 transition-all duration-300">
-                <div className="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3">Soporte 24/7</h3>
-                <p className="text-gray-300">Nuestro equipo está disponible para ayudarte cuando lo necesites.</p>
-              </div>
-            </div>
+                </GlassCard>
+              </motion.div>
+            ))}
           </div>
-        </section>
-
-        {/* Nueva Sección de Búsqueda con IA */}
-        <section className="py-20 px-8">
-            <div className="max-w-4xl mx-auto text-center p-8 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 shadow-2xl">
-                <FaRobot className="mx-auto text-6xl text-blue-400 mb-6" />
-                <h2 className="text-4xl font-extrabold mb-4">Encuentra Clientes con el Poder de la IA</h2>
-                <p className="max-w-3xl mx-auto text-lg text-gray-300 mb-8">
-                  ¿Cansado de buscar leads? Conviértete en prestamista y accede a nuestra herramienta exclusiva. 
-                  Simplemente describe a tu cliente ideal y nuestra IA generará una lista de contactos potenciales para ti. Ahorra tiempo, maximiza tu alcance.
-                </p>
-                <Link href="/register">
-                  <span className="inline-block bg-blue-600 text-white font-bold text-lg px-8 py-4 rounded-lg shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105">
-                    Descubrir Clientes Ahora
-                  </span>
-                </Link>
             </div>
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 px-8">
+      <section className="py-20 px-4 bg-gradient-to-r from-blue-900 via-purple-900 to-pink-900">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl font-bold mb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
               ¿Listo para comenzar?
             </h2>
-            <p className="text-xl text-gray-300 mb-8">
-              Únete a miles de paraguayos que ya confían en Prestame.
+            <p className="text-xl text-white/80 mb-12 max-w-2xl mx-auto">
+              Únete a la revolución financiera. Crea tu cuenta en menos de 2 minutos y accede a un mundo de oportunidades.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button 
-                onClick={handleGetStarted}
-                className="bg-green-600 hover:bg-green-700 font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-300"
-              >
-                Crear Cuenta Gratis
-              </button>
-              <button 
-                onClick={handleLearnMore}
-                className="border-2 border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white font-bold py-4 px-8 rounded-lg transition-all duration-300"
-              >
-                Ver Demo
-              </button>
-            </div>
-          </div>
-        </section>
-      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/20 py-8 px-8 bg-slate-900/50">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
-          <div className="flex items-center space-x-2 mb-4 md:mb-0">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="font-bold">P</span>
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  href="/register"
+                  className="group px-10 py-5 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center space-x-3 text-lg"
+                >
+                  <FiCheck className="w-6 h-6" />
+                  <span>Crear Cuenta Gratis</span>
+                  <FiArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </motion.div>
+              
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  href="/login"
+                  className="group px-10 py-5 bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white font-bold rounded-2xl transition-all duration-300 flex items-center space-x-3 text-lg"
+                >
+                  <span>Ya tengo cuenta</span>
+                  <FiArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </motion.div>
             </div>
-            <span className="font-bold text-xl">Prestame</span>
-          </div>
-          <div className="text-gray-400 text-sm">
-            © 2024 Prestame. Todos los derechos reservados.
-          </div>
+          </motion.div>
         </div>
-      </footer>
+      </section>
     </div>
   );
 }
