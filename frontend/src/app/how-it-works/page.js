@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { FiAward, FiTrendingUp, FiCheckCircle, FiDollarSign, FiZap, FiTarget, FiShield, FiStar, FiArrowRight, FiBarChart, FiUsers, FiClock } from 'react-icons/fi';
+import { FiAward, FiTrendingUp, FiCheckCircle, FiDollarSign, FiZap, FiTarget, FiShield, FiStar, FiArrowRight, FiBarChart, FiUsers, FiClock, FiBrain } from 'react-icons/fi';
 import Link from 'next/link';
 import AnimatedBackground from '../../components/AnimatedBackground';
 import GlassCard from '../../components/GlassCard';
@@ -13,25 +13,29 @@ export default function HowItWorksPage() {
       icon: FiDollarSign,
       title: "Información Financiera",
       description: "Ingresos, gastos y tu capacidad de ahorro demuestran tu estabilidad económica.",
-      color: "from-green-500 to-emerald-600"
+      color: "from-green-500 to-emerald-600",
+      weight: "40%"
     },
     {
       icon: FiClock,
       title: "Estabilidad Laboral",
       description: "Tu tipo de empleo y antigüedad reflejan tu consistencia profesional.",
-      color: "from-blue-500 to-cyan-600"
+      color: "from-blue-500 to-cyan-600",
+      weight: "20%"
     },
     {
       icon: FiBarChart,
       title: "Historial en la Plataforma",
       description: "Tu comportamiento con préstamos anteriores construye tu reputación.",
-      color: "from-purple-500 to-pink-600"
+      color: "from-purple-500 to-pink-600",
+      weight: "10%"
     },
     {
-      icon: FiUsers,
-      title: "Perfil Completo",
-      description: "La cantidad y calidad de información que proporcionas aumenta la confianza.",
-      color: "from-orange-500 to-red-600"
+      icon: FiBrain,
+      title: "Análisis Lingüístico IA",
+      description: "Nuestro asistente IA evalúa tu comunicación y comportamiento financiero.",
+      color: "from-indigo-500 to-purple-600",
+      weight: "30%"
     }
   ];
 
@@ -81,11 +85,14 @@ export default function HowItWorksPage() {
               transition={{ duration: 1, ease: "easeOut" }}
             >
               <motion.div
-                className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-3xl mb-8"
+                className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-3xl mb-8 relative"
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 whileTap={{ scale: 0.95 }}
               >
                 <FiAward className="w-10 h-10 text-white" />
+                <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                  <FiBrain className="w-3 h-3 text-white" />
+                </div>
               </motion.div>
               
               <motion.h1 
@@ -101,7 +108,7 @@ export default function HowItWorksPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.5, duration: 0.8 }}
                 >
-                  Katupyry
+                  Final IA
                 </motion.span>
               </motion.h1>
               
@@ -111,25 +118,34 @@ export default function HowItWorksPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7, duration: 0.8 }}
               >
-                Tu Score Katupyry es la clave para acceder a mejores préstamos. 
-                Un puntaje dinámico que refleja tu confiabilidad como prestatario en nuestra comunidad.
+                Tu Score Final combina datos financieros tradicionales con análisis de inteligencia artificial 
+                para crear la evaluación más completa y precisa de tu perfil crediticio.
               </motion.p>
 
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.9, duration: 0.8 }}
+                className="flex flex-col sm:flex-row gap-4 justify-center items-center"
               >
                 <motion.div 
                   className="inline-flex items-center space-x-4 px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl"
                   whileHover={{ scale: 1.05 }}
                 >
                   <FiZap className="w-6 h-6 text-yellow-400" />
-                  <span className="text-white font-semibold text-lg">Puntaje del 1 al 100</span>
+                  <span className="text-white font-semibold text-lg">Score Katupyry (70%)</span>
+                </motion.div>
+                
+                <motion.div 
+                  className="inline-flex items-center space-x-4 px-8 py-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm border border-purple-500/30 rounded-2xl"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <FiBrain className="w-6 h-6 text-purple-400" />
+                  <span className="text-white font-semibold text-lg">Análisis IA (30%)</span>
                 </motion.div>
               </motion.div>
             </motion.div>
-      </div>
+          </div>
         </section>
       </AnimatedBackground>
 
@@ -144,10 +160,11 @@ export default function HowItWorksPage() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              ¿Cómo se calcula tu Score?
-          </h2>
+              ¿Cómo se calcula tu Score Final?
+            </h2>
             <p className="text-xl text-white/70 max-w-3xl mx-auto">
-              Tu Score Katupyry se basa en múltiples factores que evalúan tu perfil financiero y personal de manera integral.
+              Nuestro algoritmo de IA combina múltiples fuentes de datos para crear 
+              la evaluación más precisa y justa de tu perfil crediticio.
             </p>
           </motion.div>
 
@@ -164,10 +181,13 @@ export default function HowItWorksPage() {
               >
                 <GlassCard className="h-full text-center group-hover:bg-white/15 transition-all duration-300">
                   <motion.div
-                    className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r ${factor.color} rounded-2xl mb-6`}
+                    className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r ${factor.color} rounded-2xl mb-6 relative`}
                     whileHover={{ scale: 1.1, rotate: 5 }}
                   >
                     <factor.icon className="w-8 h-8 text-white" />
+                    <div className="absolute -top-2 -right-2 bg-white/20 backdrop-blur-sm rounded-full px-2 py-1">
+                      <span className="text-white text-xs font-bold">{factor.weight}</span>
+                    </div>
                   </motion.div>
                   
                   <h3 className="text-xl font-semibold text-white mb-4">

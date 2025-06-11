@@ -290,18 +290,18 @@ class OpenAIService:
                 current_app.logger.error(f"Error parseando JSON de análisis: {e}")
                 # Fallback si el JSON está mal formateado
                 analysis_json = {
-                    "linguistic_score": 50,
+                        "linguistic_score": 50,
                     "analysis_summary": "No se pudo completar el análisis debido a un error de formato.",
                     "key_indicators": ["Error en formato de respuesta"]
-                }
+                    }
             
             # Validar y limpiar los datos
             if 'linguistic_score' not in analysis_json:
                 analysis_json['linguistic_score'] = 50
-                
+            
             if 'analysis_summary' not in analysis_json:
                 analysis_json['analysis_summary'] = "Análisis no disponible."
-                
+            
             if 'key_indicators' not in analysis_json:
                 analysis_json['key_indicators'] = ["No se identificaron indicadores"]
             
@@ -315,7 +315,7 @@ class OpenAIService:
             current_app.logger.info(f"Análisis completado. Puntuación: {analysis_json['linguistic_score']}")
             
             return json.dumps(analysis_json)
-            
+                
         except Exception as e:
             current_app.logger.error(f"Error en análisis financiero: {str(e)}")
             # Fallback para cualquier error
@@ -325,7 +325,7 @@ class OpenAIService:
                 "key_indicators": ["Error en procesamiento"]
             }
             return json.dumps(fallback_analysis)
-
+    
     def get_full_transcript(self, thread_id):
         try:
             current_app.logger.info(f"Obteniendo transcripción completa del thread: {thread_id}")
@@ -354,7 +354,7 @@ class OpenAIService:
             if response.status_code != 200:
                 current_app.logger.error(f"Error obteniendo mensajes: {response.text}")
                 raise Exception(f"Error al obtener mensajes: {response.status_code}")
-                
+            
             messages_data = response.json()
             
             # Construir transcripción completa

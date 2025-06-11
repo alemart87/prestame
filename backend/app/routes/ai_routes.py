@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services.openai_service import OpenAIService
 from app.models import db, AIConversation
+from app.models.borrower import BorrowerProfile
 
 ai_bp = Blueprint('ai_bp', __name__, url_prefix='/api/ai')
 
@@ -283,4 +284,77 @@ def test_chat():
         
     except Exception as e:
         current_app.logger.error(f"Error en el endpoint de chat de prueba: {e}")
-        return jsonify({"error": "Ha ocurrido un error interno."}), 500 
+        return jsonify({"error": "Ha ocurrido un error interno."}), 500
+
+@ai_bp.route('/calculate-final-score', methods=['POST'])
+@jwt_required()
+def calculate_final_score():
+    """Calcula y actualiza el Score Final del usuario"""
+    try:
+        user_id = get_jwt_identity()
+        current_app.logger.info(f"Calculando Score Final para usuario: {user_id}")
+        
+        # Buscar la conversación de IA del usuario
+        ai_conversation = AIConversation.query.filter_by(user_id=user_id).first()
+        
+        if not ai_conversation:
+            return jsonify({
+                'error': 'No se encontró conversación de IA para este usuario'
+            }), 404
+        
+        # Calcular el score final
+        final_score = ai_conversation.calculate_final_score()
+        
+        # Guardar en base de datos
+        db.session.commit()
+        
+        # Obtener desglose completo
+        breakdown = ai_conversation.get_score_breakdown()
+        
+        current_app.logger.info(f"Score Final calculado: {final_score}")
+        
+        return jsonify({
+            'message': 'Score Final calculado exitosamente',
+            'final_score': final_score,
+            'breakdown': breakdown
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Error calculando Score Final: {str(e)}")
+        db.session.rollback()
+        return jsonify({
+            'error': 'Error interno del servidor',
+            'details': str(e)
+        }), 500
+
+@ai_bp.route('/score-breakdown', methods=['GET'])
+@jwt_required()
+def get_score_breakdown():
+    """Obtiene el desglose detallado del Score Final"""
+    try:
+        user_id = get_jwt_identity()
+        
+        # Buscar la conversación de IA del usuario
+        ai_conversation = AIConversation.query.filter_by(user_id=user_id).first()
+        
+        if not ai_conversation:
+            return jsonify({
+                'error': 'No se encontró conversación de IA para este usuario'
+            }), 404
+        
+        # Si no tiene score final, calcularlo
+        if ai_conversation.final_score is None:
+            ai_conversation.calculate_final_score()
+            db.session.commit()
+        
+        breakdown = ai_conversation.get_score_breakdown()
+        
+        return jsonify({
+            'breakdown': breakdown
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Error obteniendo desglose de score: {str(e)}")
+        return jsonify({
+            'error': 'Error interno del servidor'
+        }), 500 

@@ -45,7 +45,8 @@ import {
   FiSave,
   FiX,
   FiCreditCard,
-  FiUser
+  FiUser,
+  FiBrain
 } from 'react-icons/fi';
 import AnimatedBackground from '../../../components/AnimatedBackground';
 import GlassCard from '../../../components/GlassCard';
@@ -1035,6 +1036,27 @@ const LeadsPage = () => {
                     </div>
                                                                     )}
 
+                                                                    {/* Score Final del prestatario (si está disponible) */}
+                                                                    {lead.borrower_profile?.final_score && (
+                                                                        <div className="mt-3 p-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30">
+                                                                            <div className="flex items-center justify-between">
+                                                                                <div className="flex items-center space-x-2">
+                                                                                    <FiBrain className="w-4 h-4 text-purple-300" />
+                                                                                    <span className="text-purple-300 text-sm font-medium">Score Final IA</span>
+                                                                                </div>
+                                                                                <div className="text-right">
+                                                                                    <p className="text-white text-lg font-bold">{lead.borrower_profile.final_score.toFixed(1)}</p>
+                                                                                    <p className="text-white/50 text-xs">
+                                                                                        {lead.borrower_profile.final_score >= 80 ? '🏆 Excelente' :
+                                                                                         lead.borrower_profile.final_score >= 70 ? '⭐ Muy Bueno' :
+                                                                                         lead.borrower_profile.final_score >= 60 ? '👍 Bueno' :
+                                                                                         lead.borrower_profile.final_score >= 40 ? '⚡ Regular' : '⚠️ Bajo'}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
                                                                     {/* Botón de gestión */}
                                                                     <div className="flex justify-center mt-4">
                                                                         <motion.button
@@ -1389,13 +1411,13 @@ const LeadDetailModal = ({
                                                 <p className="text-white text-lg font-semibold">
                                                     Gs. {lead.loan_request.amount?.toLocaleString()}
                                                 </p>
-                            </div>
+                </div>
                                             <div>
                                                 <p className="text-white/70 text-xs">Plazo</p>
                                                 <p className="text-white">
                                                     {lead.loan_request.term_months} meses
                                                 </p>
-                        </div>
+            </div>
                                             <div>
                                                 <p className="text-white/70 text-xs">Frecuencia</p>
                                                 <p className="text-white capitalize">

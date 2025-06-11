@@ -237,6 +237,48 @@ export const aiService = {
       console.error('Error en aiService.getConversationHistory:', error);
       throw error;
     }
+  },
+
+  async calculateFinalScore() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/ai/calculate-final-score`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error calculando Score Final');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  },
+
+  async getScoreBreakdown() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/ai/score-breakdown`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error obteniendo desglose de score');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
   }
 };
 

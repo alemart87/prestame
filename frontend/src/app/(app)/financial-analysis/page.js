@@ -24,33 +24,33 @@ const FinancialAnalysisPage = () => {
         <div className="relative min-h-screen overflow-hidden">
             {/* Fondo animado con z-index bajo */}
             <div className="fixed inset-0 z-0">
-                <AnimatedBackground />
+            <AnimatedBackground />
             </div>
             
             {/* Navbar con z-index alto */}
             <div className="relative z-50">
-                <AppNavbar />
+            <AppNavbar />
             </div>
             
             {/* Contenido principal */}
             <main className="relative z-10 min-h-screen pt-20">
                 <div className="container mx-auto px-6 py-8 max-w-7xl">
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                        {/* Columna izquierda - Información */}
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    {/* Columna izquierda - Información */}
                         <div className="lg:col-span-2 flex flex-col space-y-6">
-                            <motion.div
-                                initial={{ opacity: 0, y: -20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5 }}
-                                className="text-left"
-                            >
-                                <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
-                                    Análisis de Fiabilidad con IA
-                                </h1>
+                        <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                            className="text-left"
+                        >
+                            <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
+                                Análisis de Fiabilidad con IA
+                            </h1>
                                 <p className="text-gray-100 max-w-lg text-lg">
-                                    Conversa con <span className="font-semibold text-indigo-300">Katupyry-IA</span>, nuestro asistente que utiliza tecnología avanzada para entender mejor tu perfil financiero.
-                                </p>
-                            </motion.div>
+                                Conversa con <span className="font-semibold text-indigo-300">Katupyry-IA</span>, nuestro asistente que utiliza tecnología avanzada para entender mejor tu perfil financiero.
+                            </p>
+                        </motion.div>
 
                             <FeatureCard 
                                 icon={<FiMessageCircle className="text-white text-xl" />}
@@ -76,39 +76,39 @@ const FinancialAnalysisPage = () => {
                                 delay={0.3}
                             />
 
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 0.5, delay: 0.5 }}
-                                className="p-5 backdrop-blur-md bg-gradient-to-r from-amber-900/30 to-yellow-800/30 border border-amber-500/20 rounded-xl shadow-lg"
-                            >
-                                <div className="flex items-start gap-4">
-                                    <div className="flex-shrink-0">
-                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-lg">
-                                            <FiAlertTriangle className="text-white text-xl" />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-xl text-amber-300 mb-2">Importante</h3>
-                                        <p className="text-amber-100">
-                                            Este análisis es complementario a nuestros métodos tradicionales de evaluación. Te recomendamos ser honesto y detallado en tus respuestas.
-                                        </p>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5, delay: 0.5 }}
+                            className="p-5 backdrop-blur-md bg-gradient-to-r from-amber-900/30 to-yellow-800/30 border border-amber-500/20 rounded-xl shadow-lg"
+                        >
+                            <div className="flex items-start gap-4">
+                                <div className="flex-shrink-0">
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-lg">
+                                        <FiAlertTriangle className="text-white text-xl" />
                                     </div>
                                 </div>
-                            </motion.div>
-                        </div>
-
-                        {/* Columna derecha - Chatbot */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.5, delay: 0.4 }}
-                            className="lg:col-span-3 h-full"
-                        >
-                           <ChatbotComponent /> 
+                                <div>
+                                    <h3 className="font-bold text-xl text-amber-300 mb-2">Importante</h3>
+                                    <p className="text-amber-100">
+                                        Este análisis es complementario a nuestros métodos tradicionales de evaluación. Te recomendamos ser honesto y detallado en tus respuestas.
+                                    </p>
+                                </div>
+                            </div>
                         </motion.div>
                     </div>
+
+                    {/* Columna derecha - Chatbot */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, delay: 0.4 }}
+                        className="lg:col-span-3 h-full"
+                    >
+                       <ChatbotComponent /> 
+                    </motion.div>
                 </div>
+            </div>
             </main>
         </div>
     );

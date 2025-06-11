@@ -18,7 +18,9 @@ import {
   FiHelpCircle,
   FiChevronDown,
   FiSettings,
-  FiShield
+  FiShield,
+  FiZap,
+  FiActivity
 } from 'react-icons/fi';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -56,15 +58,21 @@ const AppNavbar = () => {
 
     const commonItems = [
       { href: '/dashboard', label: 'Dashboard', icon: FiGrid },
-      { href: '/profile', label: 'Mi Perfil', icon: FiUser },
     ];
 
     if (isBorrower) {
       return [
         ...commonItems,
+        { 
+          href: '/financial-analysis', 
+          label: 'Asesor Financiero IA', 
+          icon: FiZap,
+          isHighlight: true,
+          badge: 'IA'
+        },
         { href: '/loan-request', label: 'Solicitar Préstamo', icon: FiSend },
         { href: '/my-loans', label: 'Mis Préstamos', icon: FiClock },
-        { href: '/financial-analysis', label: 'Análisis de Fiabilidad', icon: FiShield },
+        { href: '/profile', label: 'Mi Perfil', icon: FiUser },
         { href: '/how-it-works', label: '¿Cómo funciona?', icon: FiHelpCircle },
       ];
     }
@@ -72,10 +80,17 @@ const AppNavbar = () => {
     if (isLender) {
       return [
         ...commonItems,
+        { 
+          href: '/financial-analysis', 
+          label: 'Asesor Financiero IA', 
+          icon: FiZap,
+          isHighlight: true,
+          badge: 'IA'
+        },
         { href: '/leads', label: 'Ver Leads', icon: FiStar },
         { href: '/ai-lead-finder', label: 'Buscar con IA', icon: FiCpu },
-        { href: '/financial-analysis', label: 'Análisis de Fiabilidad', icon: FiShield },
         { href: '/loans', label: 'Préstamos Activos', icon: FiBriefcase },
+        { href: '/profile', label: 'Mi Perfil', icon: FiUser },
         { href: '/subscriptions', label: 'Planes', icon: FiCreditCard },
         { href: '/how-it-works', label: '¿Cómo funciona?', icon: FiHelpCircle },
       ];
@@ -119,8 +134,48 @@ const AppNavbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-1">
-            {navItems.slice(0, 4).map((item, index) => {
+            {navItems.slice(0, 5).map((item, index) => {
               const Icon = item.icon;
+              
+              // Renderizado especial para el Asesor Financiero IA
+              if (item.isHighlight) {
+                return (
+                  <motion.div
+                    key={item.href}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 * index, duration: 0.6 }}
+                  >
+                    <Link
+                      href={item.href}
+                      className={`relative flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 ${
+                        pathname === item.href
+                          ? 'bg-gradient-to-r from-indigo-600/30 to-purple-600/30 text-white shadow-lg border border-indigo-400/30'
+                          : 'bg-gradient-to-r from-indigo-600/20 to-purple-600/20 text-white hover:from-indigo-600/30 hover:to-purple-600/30 border border-indigo-400/20 hover:border-indigo-400/40'
+                      }`}
+                    >
+                      <div className="relative">
+                        <Icon className="w-4 h-4" />
+                        <motion.div
+                          className="absolute -top-1 -right-1 w-2 h-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full"
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
+                      </div>
+                      <span className="font-semibold text-sm">{item.label}</span>
+                      <motion.span
+                        className="px-1.5 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-black text-xs font-bold rounded-md"
+                        animate={{ scale: [1, 1.05, 1] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                      >
+                        {item.badge}
+                      </motion.span>
+                    </Link>
+                  </motion.div>
+                );
+              }
+
+              // Renderizado normal para otros items
               return (
                 <motion.div
                   key={item.href}
@@ -143,8 +198,8 @@ const AppNavbar = () => {
               );
             })}
             
-            {/* Más opciones si hay más de 4 items */}
-            {navItems.length > 4 && (
+            {/* Más opciones si hay más de 5 items */}
+            {navItems.length > 5 && (
               <div className="relative">
                 <motion.button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -165,7 +220,7 @@ const AppNavbar = () => {
                       transition={{ duration: 0.2 }}
                       className="absolute right-0 mt-2 w-48 backdrop-blur-xl bg-white/10 border border-white/20 rounded-xl shadow-xl py-2"
                     >
-                      {navItems.slice(4).map((item, index) => {
+                      {navItems.slice(5).map((item, index) => {
                         const Icon = item.icon;
                         return (
                           <Link
@@ -301,6 +356,33 @@ const AppNavbar = () => {
               <div className="px-2 pt-2 pb-3 space-y-1">
                 {navItems.map((item) => {
                   const Icon = item.icon;
+                  
+                  // Renderizado especial para el Asesor Financiero IA en móvil
+                  if (item.isHighlight) {
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`relative flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-300 ${
+                          pathname === item.href
+                            ? 'bg-gradient-to-r from-indigo-600/30 to-purple-600/30 text-white border border-indigo-400/30'
+                            : 'bg-gradient-to-r from-indigo-600/20 to-purple-600/20 text-white border border-indigo-400/20'
+                        }`}
+                      >
+                        <div className="relative">
+                          <Icon className="w-5 h-5" />
+                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full" />
+                        </div>
+                        <span>{item.label}</span>
+                        <span className="px-2 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-black text-xs font-bold rounded-md ml-auto">
+                          {item.badge}
+                        </span>
+                      </Link>
+                    );
+                  }
+
+                  // Renderizado normal para otros items en móvil
                   return (
                     <Link
                       key={item.href}
