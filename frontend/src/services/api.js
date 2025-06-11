@@ -72,10 +72,23 @@ export const lenderService = {
   contactLead: (id) => api.post(`/lenders/leads/${id}/contact`),
   getPackages: () => api.get('/lenders/packages'),
   purchasePackage: (packageType) => api.post('/lenders/packages/purchase', { package_type: packageType }),
+  updateLeadStatus: (id, status, followUpDate = null) => {
+    const data = { status };
+    if (followUpDate) {
+      data.follow_up_date = followUpDate;
+    }
+    return api.put(`/lenders/leads/${id}/update-status`, data);
+  },
+  addLeadComment: (id, comment) => api.post(`/lenders/leads/${id}/add-comment`, { comment }),
+  getMyLeads: (filters = {}) => {
+    const params = new URLSearchParams(filters).toString();
+    return api.get(`/lenders/my-leads?${params}`);
+  }
 };
 
-export const getLeadsForLender = async () => {
-    const response = await api.get('/lenders/leads');
+export const getLeadsForLender = async (filters = {}) => {
+    const params = new URLSearchParams(filters).toString();
+    const response = await api.get(`/lenders/leads?${params}`);
     return response.data.leads;
 };
 
@@ -117,6 +130,112 @@ export const findLeadsWithAI = async (data) => {
 export const getSearchStatus = async () => {
     const response = await api.get('/ai/search-status');
     return response.data;
+};
+
+// --- Servicios de IA Conversacional ---
+export const aiService = {
+  // Enviar mensaje al asistente y obtener respuesta
+  sendMessage: async (message) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No hay token de autenticación');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/ai/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ message })
+      });
+
+      if (!response.ok) {
+        // Si el error es 401, es un problema de autenticación
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          throw new Error('Sesión expirada, por favor inicia sesión de nuevo');
+        }
+        
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al comunicarse con el asistente');
+      }
+
+      const data = await response.json();
+      return data.reply;
+    } catch (error) {
+      console.error('Error en aiService.sendMessage:', error);
+      throw error;
+    }
+  },
+
+  // Analizar la conversación completa y obtener una puntuación
+  analyzeConversation: async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No hay token de autenticación');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/ai/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          throw new Error('Sesión expirada, por favor inicia sesión de nuevo');
+        }
+        
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al analizar la conversación');
+      }
+
+      const data = await response.json();
+      return data.analysis;
+    } catch (error) {
+      console.error('Error en aiService.analyzeConversation:', error);
+      throw error;
+    }
+  },
+
+  // Obtener el historial de la conversación y el análisis si existe
+  getConversationHistory: async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No hay token de autenticación');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/ai/conversation`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          throw new Error('Sesión expirada, por favor inicia sesión de nuevo');
+        }
+        
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al obtener el historial de conversación');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error en aiService.getConversationHistory:', error);
+      throw error;
+    }
+  }
 };
 
 export default api; 

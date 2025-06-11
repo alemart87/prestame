@@ -129,7 +129,7 @@ export default function HowItWorksPage() {
                 </motion.div>
               </motion.div>
             </motion.div>
-          </div>
+      </div>
         </section>
       </AnimatedBackground>
 
@@ -145,7 +145,7 @@ export default function HowItWorksPage() {
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
               ¿Cómo se calcula tu Score?
-            </h2>
+          </h2>
             <p className="text-xl text-white/70 max-w-3xl mx-auto">
               Tu Score Katupyry se basa en múltiples factores que evalúan tu perfil financiero y personal de manera integral.
             </p>
@@ -202,10 +202,10 @@ export default function HowItWorksPage() {
             
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
               ¡Sube de Nivel!
-            </h2>
+          </h2>
             <p className="text-xl text-white/70 max-w-3xl mx-auto">
               Mejorar tu score es un proceso activo. Aquí tienes las claves para potenciar tu perfil y acceder a mejores oportunidades.
-            </p>
+          </p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -234,8 +234,8 @@ export default function HowItWorksPage() {
                       <p className="text-white/70 leading-relaxed">
                         {tip.description}
                       </p>
-                    </div>
-                  </div>
+              </div>
+            </div>
                 </GlassCard>
               </motion.div>
             ))}
@@ -261,8 +261,8 @@ export default function HowItWorksPage() {
             </motion.div>
             
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Los Beneficios de un Score Alto
-            </h2>
+            Los Beneficios de un Score Alto
+          </h2>
             <p className="text-xl text-white/70 max-w-3xl mx-auto">
               Un score elevado te abre las puertas a un mundo de oportunidades financieras exclusivas.
             </p>
@@ -334,11 +334,11 @@ export default function HowItWorksPage() {
                 >
                   <span>Ver Mi Score</span>
                   <FiArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-                </Link>
+        </Link>
               </motion.div>
             </div>
           </motion.div>
-        </div>
+      </div>
       </section>
     </div>
   );

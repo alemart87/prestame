@@ -156,7 +156,7 @@ export default function MyLoansPage() {
   if (authLoading || loading) {
     return (
       <AnimatedBackground particleCount={15}>
-        <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-screen">
           <GlassCard className="text-center">
             <motion.div
               className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full mx-auto mb-4"
@@ -165,7 +165,7 @@ export default function MyLoansPage() {
             />
             <p className="text-white/80 text-lg">Cargando solicitudes...</p>
           </GlassCard>
-        </div>
+      </div>
       </AnimatedBackground>
     );
   }
@@ -181,14 +181,14 @@ export default function MyLoansPage() {
       <AnimatedBackground particleCount={25}>
         <div className="min-h-screen pt-20 px-4">
           <div className="max-w-7xl mx-auto space-y-8">
-            {/* Header */}
+      {/* Header */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               className="flex flex-col lg:flex-row lg:items-center lg:justify-between"
             >
-              <div>
+        <div>
                 <motion.h1 
                   className="text-4xl md:text-5xl font-bold text-white mb-2"
                   initial={{ opacity: 0, x: -20 }}
@@ -203,10 +203,10 @@ export default function MyLoansPage() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, duration: 0.6 }}
                 >
-                  Gestiona y revisa el estado de tus solicitudes
+            Gestiona y revisa el estado de tus solicitudes
                 </motion.p>
-              </div>
-              
+        </div>
+        
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -221,7 +221,7 @@ export default function MyLoansPage() {
                     <FiPlus className="w-5 h-5" />
                     <span>Nueva Solicitud</span>
                   </motion.button>
-                </Link>
+        </Link>
               </motion.div>
             </motion.div>
 
@@ -278,7 +278,7 @@ export default function MyLoansPage() {
               ))}
             </motion.div>
 
-            {/* Filtros */}
+      {/* Filtros */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -289,7 +289,7 @@ export default function MyLoansPage() {
                   <motion.div
                     className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center"
                     whileHover={{ scale: 1.1, rotate: 5 }}
-                  >
+        >
                     <FiFilter className="w-4 h-4 text-white" />
                   </motion.div>
                   <h3 className="text-lg font-semibold text-white">Filtrar Solicitudes</h3>
@@ -309,20 +309,20 @@ export default function MyLoansPage() {
                         filter === filterOption.key
                           ? `bg-gradient-to-r ${getFilterColor(filterOption.key)} text-white shadow-lg`
                           : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
-                      }`}
+          }`}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
                       {filterOption.label} ({filterOption.count})
                     </motion.button>
                   ))}
-                </div>
+      </div>
               </GlassCard>
             </motion.div>
 
-            {/* Error Message */}
+      {/* Error Message */}
             <AnimatePresence>
-              {error && (
+      {error && (
                 <motion.div
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -332,7 +332,7 @@ export default function MyLoansPage() {
                   <FiAlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
                   <p className="text-red-200 text-sm">{error}</p>
                 </motion.div>
-              )}
+      )}
             </AnimatePresence>
 
             {/* Lista de Préstamos */}
@@ -342,7 +342,7 @@ export default function MyLoansPage() {
               transition={{ delay: 0.8, duration: 0.6 }}
               className="space-y-6"
             >
-              {filteredLoans.length === 0 ? (
+      {filteredLoans.length === 0 ? (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -357,14 +357,14 @@ export default function MyLoansPage() {
                     </motion.div>
                     <h3 className="text-xl font-semibold text-white mb-2">
                       {filter === 'all' ? 'No tienes solicitudes de préstamo' : `No tienes solicitudes ${getStatusText(filter).toLowerCase()}s`}
-                    </h3>
+          </h3>
                     <p className="text-white/70 mb-6">
-                      {filter === 'all' 
+            {filter === 'all' 
                         ? 'Crea tu primera solicitud para comenzar a obtener financiamiento'
-                        : 'Cambia el filtro para ver otras solicitudes'
-                      }
-                    </p>
-                    {filter === 'all' && (
+              : 'Cambia el filtro para ver otras solicitudes'
+            }
+          </p>
+          {filter === 'all' && (
                       <Link href="/loan-request">
                         <motion.button
                           className="px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center space-x-2 mx-auto"
@@ -374,12 +374,12 @@ export default function MyLoansPage() {
                           <FiPlus className="w-4 h-4" />
                           <span>Crear Primera Solicitud</span>
                         </motion.button>
-                      </Link>
-                    )}
+            </Link>
+          )}
                   </GlassCard>
                 </motion.div>
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <AnimatePresence>
                     {filteredLoans.map((loan, index) => (
                       <motion.div
@@ -395,16 +395,16 @@ export default function MyLoansPage() {
                           transition={{ duration: 0.3 }}
                         >
                           <GlassCard className="h-full">
-                            {/* Header de la tarjeta */}
+              {/* Header de la tarjeta */}
                             <div className="flex items-center justify-between mb-4">
                               <motion.div
                                 className={`px-4 py-2 bg-gradient-to-r ${getStatusGradient(loan.status)} rounded-xl flex items-center space-x-2`}
                                 whileHover={{ scale: 1.05 }}
                               >
-                                {getStatusIcon(loan.status)}
+                  {getStatusIcon(loan.status)}
                                 <span className="text-white text-sm font-medium">
-                                  {getStatusText(loan.status)}
-                                </span>
+                    {getStatusText(loan.status)}
+                  </span>
                               </motion.div>
                               
                               <div className="flex items-center space-x-2">
@@ -437,7 +437,7 @@ export default function MyLoansPage() {
                                   </>
                                 )}
                               </div>
-                            </div>
+                </div>
 
                             {/* Información principal */}
                             <div className="space-y-4">
@@ -445,8 +445,8 @@ export default function MyLoansPage() {
                                 <div>
                                   <p className="text-white/70 text-sm">Monto Solicitado</p>
                                   <p className="text-white text-2xl font-bold">
-                                    {formatCurrency(loan.amount)}
-                                  </p>
+                    {formatCurrency(loan.amount)}
+                  </p>
                                 </div>
                                 <motion.div
                                   className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center"
@@ -479,19 +479,19 @@ export default function MyLoansPage() {
                                 <div>
                                   <p className="text-white/70 text-xs">Fecha</p>
                                   <p className="text-white text-sm font-medium">
-                                    {formatDate(loan.created_at)}
-                                  </p>
-                                </div>
-                              </div>
+                    {formatDate(loan.created_at)}
+                  </p>
+                </div>
+                </div>
 
-                              {loan.description && (
-                                <div>
+                {loan.description && (
+                  <div>
                                   <p className="text-white/70 text-xs mb-1">Descripción</p>
                                   <p className="text-white/90 text-sm bg-white/5 p-3 rounded-lg">
-                                    {loan.description}
-                                  </p>
-                                </div>
-                              )}
+                      {loan.description}
+                    </p>
+                  </div>
+                )}
 
                               {loan.status === 'funded' && loan.lender && (
                                 <motion.div
@@ -504,10 +504,10 @@ export default function MyLoansPage() {
                                     <p className="text-green-200 text-sm">
                                       Financiado por: {loan.lender.first_name} {loan.lender.last_name}
                                     </p>
-                                  </div>
+                  </div>
                                 </motion.div>
-                              )}
-                            </div>
+                )}
+              </div>
                           </GlassCard>
                         </motion.div>
                       </motion.div>

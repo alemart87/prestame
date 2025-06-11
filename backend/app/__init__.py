@@ -44,6 +44,7 @@ def create_app(config_class=Config):
     from app.models.lead import Lead
     from app.models.borrower import BorrowerProfile
     from app.models.lender import LenderProfile
+    from app.models.ai_conversation import AIConversation
     
     # Importar y registrar blueprints
     from app.routes.auth import auth_bp
@@ -52,6 +53,7 @@ def create_app(config_class=Config):
     from app.routes.loans import loans_bp
     from app.routes.stripe_routes import stripe_bp
     from app.routes.ai_routes import ai_bp
+    from app.routes.scraper_routes import scraper_bp
     from app.routes.admin import admin_bp
     from app.routes.health import health_bp
 
@@ -61,6 +63,7 @@ def create_app(config_class=Config):
     app.register_blueprint(loans_bp, url_prefix='/api/loans')
     app.register_blueprint(stripe_bp, url_prefix='/api/stripe')
     app.register_blueprint(ai_bp, url_prefix='/api/ai')
+    app.register_blueprint(scraper_bp, url_prefix='/api/scraper')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(health_bp)
     

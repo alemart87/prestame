@@ -1,221 +1,280 @@
-import os
 import json
-import logging
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app import db
-from app.models.user import User
-from app.models.borrower import BorrowerProfile
-from app.models.lender import LenderProfile
-from app.models.loan import LoanRequest
-from app.models.lead import Lead
-from app.utils.paraguay_scraper import search_real_leads_paraguay, AdvancedParaguayScraper
+from app.services.openai_service import OpenAIService
+from app.models import db, AIConversation
 
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+ai_bp = Blueprint('ai_bp', __name__, url_prefix='/api/ai')
 
-ai_bp = Blueprint('ai_bp', __name__)
-
-@ai_bp.route('/find-leads', methods=['POST'])
-@jwt_required()
-def find_leads_with_scraper():
+@ai_bp.route('/test-thread-creation', methods=['GET'])
+def test_thread_creation():
     """
-    Busca leads reales en sitios web paraguayos usando web scraping
+    Endpoint de prueba para verificar la creación de threads sin autenticación.
+    Este endpoint es solo para desarrollo y pruebas.
     """
     try:
-        user_id_str = get_jwt_identity()
-        user_id = int(user_id_str)  # Convertir a entero
-        user = User.query.get(user_id)
+        openai_service = OpenAIService()
+        thread_id = openai_service.create_thread()
+        return jsonify({"success": True, "thread_id": thread_id, "message": "Thread creado correctamente."})
+    except Exception as e:
+        current_app.logger.error(f"Error en la prueba de creación de thread: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@ai_bp.route('/chat', methods=['POST'])
+@jwt_required()
+def chat_with_assistant():
+    """
+    Gestiona la conversación entre un usuario y el asistente de IA.
+    Crea un hilo de conversación si no existe.
+    """
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    message_content = data.get('message')
+
+    if not message_content:
+        return jsonify({"error": "El mensaje no puede estar vacío."}), 400
+
+    try:
+        # Crear instancia del servicio OpenAI
+        openai_service = OpenAIService()
+        thread_id = None
         
-        if not user or not user.lender_profile:
-            return jsonify({"msg": "Solo los prestamistas pueden realizar esta acción"}), 403
-
-        lender_profile = user.lender_profile
-        logger.info(f"Créditos disponibles: {lender_profile.ai_search_credits}")
-
-        if lender_profile.ai_search_credits <= 0:
-            logger.error(f"Usuario {user_id} sin créditos de búsqueda")
-            return jsonify({"msg": "No tienes suficientes créditos de búsqueda"}), 400
-
-        data = request.get_json()
-        logger.info(f"Datos recibidos: {data}")
+        # Usar directamente la base de datos a través de current_app
+        from flask import current_app
+        from app.models.ai_conversation import AIConversation
+        from app import db
         
-        if not data:
-            logger.error("No se recibieron datos JSON")
-            return jsonify({"msg": "No se recibieron datos"}), 400
+        # Buscar o crear la conversación en la BD
+        ai_conversation = AIConversation.query.filter_by(user_id=user_id).first()
+        
+        if not ai_conversation:
+            # Crear thread en OpenAI
+            thread_id = openai_service.create_thread()
+            current_app.logger.info(f"Nuevo thread creado para usuario {user_id}: {thread_id}")
             
-        prompt = data.get('prompt')
-        logger.info(f"Prompt extraído: {prompt}")
-
-        if not prompt:
-            logger.error("Prompt vacío o no proporcionado")
-            return jsonify({"msg": "La descripción del cliente ideal es requerida"}), 400
-
-        logger.info(f"Iniciando búsqueda avanzada de leads reales para usuario {user_id} con prompt: {prompt}")
-        logger.info(f"Fuentes disponibles: LinkedIn, Facebook, MercadoLibre, Directorios Empresariales")
-
-        # Usar el scraper avanzado de Paraguay con más leads
-        limit = data.get('limit', 15)  # Permitir más leads por búsqueda
-        leads_data = search_real_leads_paraguay(prompt, limit=limit)
-
-        if not leads_data:
-            return jsonify({"msg": "No se encontraron leads con los criterios especificados"}), 404
-
-        # Buscar o crear un usuario temporal para leads del scraper
+            # Guardar en BD manualmente
+            ai_conversation = AIConversation(user_id=user_id, thread_id=thread_id)
+            db.session.add(ai_conversation)
+            db.session.commit()
+            current_app.logger.info(f"Conversación guardada en la base de datos")
+        else:
+            thread_id = ai_conversation.thread_id
+            current_app.logger.info(f"Usando thread existente: {thread_id}")
+        
+        # Añadir el mensaje del usuario al hilo
+        openai_service.add_message_to_thread(thread_id, message_content)
+        
+        # Obtener la respuesta del asistente
+        assistant_response = openai_service.get_assistant_response(thread_id)
+        
+        return jsonify({"reply": assistant_response})
+    
+    except Exception as e:
+        current_app.logger.error(f"Error en el endpoint de chat: {e}")
+        # En caso de error, intentar hacer rollback para evitar que la sesión quede en mal estado
         try:
-            # Buscar si ya existe un usuario temporal para el scraper
-            scraper_user = User.query.filter_by(email='scraper@prestame.com.py').first()
-            
-            if not scraper_user:
-                # Crear usuario temporal para el scraper
-                scraper_user = User(
-                    email='scraper@prestame.com.py',
-                    password='scraper_temp',  # Password temporal
-                    first_name='Scraper',
-                    last_name='Paraguay',
-                    user_type='borrower',
-                    phone='+595 21 000000'
-                )
-                db.session.add(scraper_user)
-                db.session.flush()
-            
-            # Buscar o crear borrower_profile temporal
-            scraper_borrower = BorrowerProfile.query.filter_by(user_id=scraper_user.id).first()
-            
-            if not scraper_borrower:
-                scraper_borrower = BorrowerProfile(
-                    user_id=scraper_user.id,
-                    monthly_income=3000000,  # 3M PYG promedio
-                    monthly_expenses=2000000,  # 2M PYG promedio
-                    debt_to_income_ratio=0.67,
-                    employment_status='Independiente',
-                    job_title='Lead del Scraper',
-                    employer='Datos Reales Paraguay'
-                )
-                db.session.add(scraper_borrower)
-                db.session.flush()
-            
-            scraper_borrower_id = scraper_borrower.id
-            
-        except Exception as e:
-            logger.error(f"Error creando usuario/borrower temporal: {str(e)}")
             db.session.rollback()
-            return jsonify({"msg": "Error interno del servidor"}), 500
+        except:
+            pass
+        return jsonify({"error": "Ha ocurrido un error interno."}), 500
 
-        # Crear solicitudes de préstamo y leads para cada lead encontrado
-        created_leads = []
-        for lead_info in leads_data:
-            try:
-                # Crear solicitud de préstamo con información del lead
-                loan_request = LoanRequest(
-                    borrower_profile_id=scraper_borrower_id,  # Usar el borrower temporal
-                    amount=lead_info.get('loan_amount', 5000000),  # 5M PYG por defecto
-                    purpose=f"Capital de trabajo para {lead_info.get('business_type', 'negocio')}",
-                    payment_frequency='monthly',
-                    term_months=12,
-                    status='pending',
-                    description=json.dumps(lead_info)  # Guardar toda la info del lead como JSON
-                )
-                db.session.add(loan_request)
-                db.session.flush()  # Para obtener el ID
-
-                # Crear lead asociado al prestamista
-                lead = Lead(
-                    lender_id=lender_profile.id,
-                    loan_request_id=loan_request.id,
-                    status='new',
-                    notes=json.dumps(lead_info)  # Guardar toda la info como JSON en notes
-                )
-                db.session.add(lead)
-
-                created_leads.append({
-                    'contact_info': lead_info,
-                    'loan_amount': loan_request.amount,
-                    'purpose': loan_request.purpose
-                })
-
-            except Exception as e:
-                logger.error(f"Error creando lead individual: {str(e)}")
-                continue
-
-        # Descontar crédito de búsqueda
-        lender_profile.ai_search_credits -= 1
-        
-        # Confirmar todas las transacciones
-        db.session.commit()
-
-        logger.info(f"Búsqueda completada. {len(created_leads)} leads creados para usuario {user_id}")
-
-        return jsonify({
-            "msg": f"Búsqueda completada exitosamente. Se encontraron {len(created_leads)} leads reales.",
-            "leads_found": len(created_leads),
-            "leads": created_leads,
-            "remaining_credits": lender_profile.ai_search_credits,
-            "search_type": "real_data_scraping"
-        }), 200
-
-    except ValueError:
-        return jsonify({'error': 'Token inválido'}), 422
-    except Exception as e:
-        logger.error(f"Error en búsqueda de leads: {str(e)}")
-        db.session.rollback()
-        return jsonify({"msg": f"Error interno del servidor: {str(e)}"}), 500
-
-@ai_bp.route('/search-status', methods=['GET'])
+@ai_bp.route('/analyze', methods=['POST'])
 @jwt_required()
-def get_search_status():
+def analyze_conversation():
     """
-    Obtiene el estado de las búsquedas del usuario
+    Analiza la conversación del usuario actual y devuelve los resultados.
     """
+    user_id = get_jwt_identity()
+    
+    # Verificar que existe una conversación para este usuario
+    ai_conversation = AIConversation.query.filter_by(user_id=user_id).first()
+    if not ai_conversation:
+        return jsonify({"error": "No existe una conversación activa para este usuario."}), 404
+    
+    thread_id = ai_conversation.thread_id
+    if not thread_id:
+        return jsonify({"error": "No se ha iniciado una conversación con el asistente."}), 400
+
     try:
-        user_id_str = get_jwt_identity()
-        user_id = int(user_id_str)  # Convertir a entero
-        user = User.query.get(user_id)
+        openai_service = OpenAIService()
         
-        if not user or not user.lender_profile:
-            return jsonify({"msg": "Solo los prestamistas pueden realizar esta acción"}), 403
+        # Obtener la transcripción completa
+        current_app.logger.info("Obteniendo transcripción completa...")
+        transcript = openai_service.get_full_transcript(thread_id)
+        current_app.logger.info(f"Transcripción obtenida. Longitud: {len(transcript)} caracteres")
+        
+        if not transcript.strip() or len(transcript.strip().split('\n')) < 2:
+             current_app.logger.error("Conversación demasiado corta para análisis")
+             return jsonify({"error": "La conversación es muy corta para ser analizada."}), 400
+        
+        # Analizar la conversación
+        current_app.logger.info("Enviando transcripción completa a OpenAI para análisis...")
+        analysis_json_str = openai_service.analyze_conversation_transcript(transcript)
+        current_app.logger.info("Respuesta de análisis recibida de OpenAI")
+        
+        # Intentar parsear el JSON
+        current_app.logger.info("Parseando respuesta JSON...")
+        try:
+            analysis_data = json.loads(analysis_json_str)
+            current_app.logger.info(f"Puntuación lingüística: {analysis_data.get('linguistic_score')}")
+        except json.JSONDecodeError as e:
+            current_app.logger.error(f"Error al parsear JSON de respuesta: {e}")
+            return jsonify({"error": "Error al procesar la respuesta del análisis."}), 500
+        
+        # Verificar que los datos estén presentes y tengan el formato correcto
+        score = analysis_data.get('linguistic_score')
+        summary = analysis_data.get('analysis_summary')
+        key_indicators = analysis_data.get('key_indicators', [])
+        
+        if score is None or summary is None:
+            current_app.logger.error("Faltan campos obligatorios en la respuesta")
+            return jsonify({"error": "La respuesta del análisis está incompleta."}), 500
+        
+        # Asegurar que score es un entero
+        if not isinstance(score, int):
+            try:
+                if isinstance(score, str) and score.strip():
+                    # Limpiar la cadena de caracteres no numéricos
+                    score_str = ''.join(c for c in score if c.isdigit() or c == '.')
+                    if score_str:
+                        score = int(float(score_str))
+                    else:
+                        score = 50
+                else:
+                    score = int(float(score))
+            except (ValueError, TypeError) as e:
+                current_app.logger.warning(f"No se pudo convertir la puntuación a entero: {e}. Usando valor por defecto")
+                score = 50
+        
+        # Asegurar que esté en el rango correcto
+        score = max(0, min(100, score))
+        
+        # Verificar que el resumen es una cadena no vacía
+        if not summary or not isinstance(summary, str):
+            summary = "No se pudo generar un análisis detallado."
+        
+        # Guardar los resultados en la base de datos
+        current_app.logger.info("Guardando resultados en la base de datos...")
+        
+        try:
+            # Crear una nueva sesión para evitar problemas con sesiones caducadas
+            from app import db
+            
+            # Obtener la conversación actual de nuevo para evitar problemas de sesión
+            db_conversation = AIConversation.query.filter_by(user_id=user_id).first()
+            if db_conversation:
+                # Actualizar los campos
+                db_conversation.linguistic_score = score
+                db_conversation.linguistic_analysis = summary
+                
+                # Asegurar que se actualiza el campo updated_at
+                from datetime import datetime
+                db_conversation.updated_at = datetime.utcnow()
+                
+                # Commit los cambios
+                db.session.commit()
+                current_app.logger.info(f"Análisis guardado correctamente en la base de datos. Score: {score}")
+            else:
+                current_app.logger.error("No se pudo obtener la conversación para actualizar")
+                return jsonify({"error": "Error al acceder a los datos de la conversación"}), 500
+                
+        except Exception as db_error:
+            db.session.rollback()
+            current_app.logger.error(f"Error al guardar en la base de datos: {str(db_error)}")
+            return jsonify({"error": f"Error al guardar el análisis: {str(db_error)}"}), 500
 
-        lender_profile = user.lender_profile
+        # Incluir los indicadores clave en la respuesta
+        analysis_response = {
+            "message": "Análisis completado y guardado.",
+            "analysis": {
+                "linguistic_score": score,
+                "analysis_summary": summary,
+                "key_indicators": key_indicators
+            }
+        }
         
-        # Contar leads del usuario
-        total_leads = Lead.query.filter_by(lender_id=lender_profile.id).count()
-        new_leads = Lead.query.filter_by(lender_id=lender_profile.id, status='new').count()
-        contacted_leads = Lead.query.filter_by(lender_id=lender_profile.id, contacted=True).count()
+        return jsonify(analysis_response)
 
-        return jsonify({
-            "credits_remaining": lender_profile.ai_search_credits,
-            "total_leads": total_leads,
-            "new_leads": new_leads,
-            "contacted_leads": contacted_leads,
-            "search_type": "real_data_scraping"
-        }), 200
+    except json.JSONDecodeError as je:
+        current_app.logger.error(f"Error al decodificar el JSON de la API de OpenAI para el análisis: {je}")
+        current_app.logger.error(f"Respuesta recibida: {analysis_json_str[:200] if 'analysis_json_str' in locals() else 'No disponible'}...")
+        return jsonify({"error": "Error al procesar la respuesta del análisis."}), 500
         
-    except ValueError:
-        return jsonify({'error': 'Token inválido'}), 422
     except Exception as e:
-        logger.error(f"Error obteniendo estado de búsqueda: {str(e)}")
-        return jsonify({"msg": "Error interno del servidor"}), 500
+        current_app.logger.error(f"Error general en el análisis: {str(e)}")
+        return jsonify({"error": f"Ha ocurrido un error al realizar el análisis: {str(e)}"}), 500
 
-@ai_bp.route('/test-scraper', methods=['GET'])
-def test_scraper():
+@ai_bp.route('/conversation', methods=['GET'])
+@jwt_required()
+def get_conversation_history():
     """
-    Endpoint de prueba para verificar que el scraper funciona
+    Devuelve el historial de la conversación y el último análisis.
     """
+    user_id = get_jwt_identity()
+    
+    ai_conversation = AIConversation.query.filter_by(user_id=user_id).first()
+        
+    if not ai_conversation or not ai_conversation.thread_id:
+        return jsonify({"history": [], "analysis": None})
+
     try:
-        test_prompt = "Comerciantes de Asunción que vendan ropa"
-        logger.info(f"Probando scraper con prompt: {test_prompt}")
+        openai_service = OpenAIService()
         
-        leads_data = search_real_leads_paraguay(test_prompt)
+        # Obtener mensajes usando nuestro cliente HTTP
+        response = openai_service.http_client.get(
+            f"{openai_service.api_base_url}/threads/{ai_conversation.thread_id}/messages",
+            headers=openai_service.headers,
+            params={"order": "asc"}
+        )
+        response.raise_for_status()
+        messages_data = response.json()
         
-        return jsonify({
-            "msg": "Scraper funcionando correctamente",
-            "test_prompt": test_prompt,
-            "leads_found": len(leads_data) if leads_data else 0,
-            "sample_leads": leads_data[:3] if leads_data else [],  # Mostrar solo 3 ejemplos
-            "search_type": "real_data_scraping"
-        }), 200
+        history = []
+        for msg in messages_data.get("data", []):
+            sender = 'user' if msg.get("role") == 'user' else 'assistant'
+            content = msg.get("content", [{}])[0].get("text", {}).get("value", "")
+            history.append({'sender': sender, 'message': content})
+
+        analysis = {
+            "score": ai_conversation.linguistic_score,
+            "summary": ai_conversation.linguistic_analysis,
+            "updated_at": ai_conversation.updated_at.isoformat() if ai_conversation.updated_at and ai_conversation.linguistic_score is not None else None
+        }
+
+        return jsonify({"history": history, "analysis": analysis})
+
+    except Exception as e:
+        current_app.logger.error(f"Error al recuperar el historial de conversación: {e}")
+        return jsonify({"error": "Ha ocurrido un error interno."}), 500
+
+@ai_bp.route('/test-chat', methods=['POST'])
+def test_chat():
+    """
+    Endpoint de prueba para el chat sin autenticación.
+    Este endpoint es solo para desarrollo y pruebas.
+    """
+    data = request.get_json()
+    message_content = data.get('message')
+
+    if not message_content:
+        return jsonify({"error": "El mensaje no puede estar vacío."}), 400
+
+    try:
+        # Crear instancia del servicio OpenAI
+        openai_service = OpenAIService()
+        
+        # Crear un nuevo thread para cada conversación de prueba
+        thread_id = openai_service.create_thread()
+        current_app.logger.info(f"Thread de prueba creado: {thread_id}")
+        
+        # Añadir el mensaje del usuario al hilo
+        openai_service.add_message_to_thread(thread_id, message_content)
+        
+        # Obtener la respuesta del asistente
+        assistant_response = openai_service.get_assistant_response(thread_id)
+        
+        return jsonify({"reply": assistant_response})
         
     except Exception as e:
-        logger.error(f"Error en test del scraper: {str(e)}")
-        return jsonify({"msg": f"Error en el scraper: {str(e)}"}), 500 
+        current_app.logger.error(f"Error en el endpoint de chat de prueba: {e}")
+        return jsonify({"error": "Ha ocurrido un error interno."}), 500 

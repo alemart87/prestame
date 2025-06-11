@@ -5,6 +5,7 @@ from app.models import User, LenderProfile, Lead, LoanRequest, BorrowerProfile
 from app.schemas import LenderProfileSchema, LeadSchema, LoanRequestSchema
 from app import db
 from app.models.lead import Lead
+from datetime import datetime
 
 lenders_bp = Blueprint('lenders', __name__)
 lender_schema = LenderProfileSchema()
@@ -533,4 +534,150 @@ def get_my_leads():
         return jsonify({'error': 'Token inválido'}), 422
     except Exception as e:
         print(f"ERROR EN GET MY LEADS: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+
+@lenders_bp.route('/leads/<int:lead_id>/update-status', methods=['PUT'])
+@jwt_required()
+def update_lead_status(lead_id):
+    """Endpoint para actualizar el estado de un lead"""
+    try:
+        # Verificar que el usuario sea un prestamista
+        if not is_lender():
+            return jsonify({'error': 'No autorizado. Debe ser un prestamista.'}), 403
+        
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str)
+        
+        # Buscar perfil del prestamista
+        lender_profile = LenderProfile.query.filter_by(user_id=user_id).first()
+        if not lender_profile:
+            return jsonify({'error': 'Perfil de prestamista no encontrado'}), 404
+        
+        # Buscar el lead
+        lead = Lead.query.filter_by(id=lead_id, lender_id=lender_profile.id).first()
+        if not lead:
+            return jsonify({'error': 'Lead no encontrado o no pertenece a este prestamista'}), 404
+        
+        # Obtener datos del request
+        data = request.get_json()
+        new_status = data.get('status')
+        
+        # Validar el estado
+        valid_statuses = ['new', 'pending', 'suitable', 'not_suitable', 'follow_up', 'closed']
+        if not new_status or new_status not in valid_statuses:
+            return jsonify({'error': 'Estado no válido'}), 400
+        
+        # Actualizar el estado
+        lead.status = new_status
+        
+        # Si es seguimiento, registrar la fecha
+        if new_status == 'follow_up' and data.get('follow_up_date'):
+            try:
+                follow_up_date = datetime.fromisoformat(data.get('follow_up_date'))
+                
+                # Si ya existe un JSON en notes, conservar la información
+                notes_data = {}
+                if lead.notes:
+                    try:
+                        notes_data = json.loads(lead.notes)
+                    except json.JSONDecodeError:
+                        notes_data = {'comment': lead.notes}
+                
+                # Agregar o actualizar fecha de seguimiento
+                notes_data['follow_up_date'] = data.get('follow_up_date')
+                lead.notes = json.dumps(notes_data)
+            except ValueError:
+                return jsonify({'error': 'Formato de fecha inválido'}), 400
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Estado del lead actualizado correctamente',
+            'lead': lead_schema.dump(lead)
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR EN UPDATE LEAD STATUS: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+
+@lenders_bp.route('/leads/<int:lead_id>/add-comment', methods=['POST'])
+@jwt_required()
+def add_lead_comment(lead_id):
+    """Endpoint para agregar un comentario a un lead"""
+    try:
+        # Verificar que el usuario sea un prestamista
+        if not is_lender():
+            return jsonify({'error': 'No autorizado. Debe ser un prestamista.'}), 403
+        
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str)
+        
+        # Buscar perfil del prestamista
+        lender_profile = LenderProfile.query.filter_by(user_id=user_id).first()
+        if not lender_profile:
+            return jsonify({'error': 'Perfil de prestamista no encontrado'}), 404
+
+        # Buscar el usuario
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # Buscar el lead
+        lead = Lead.query.filter_by(id=lead_id, lender_id=lender_profile.id).first()
+        if not lead:
+            return jsonify({'error': 'Lead no encontrado o no pertenece a este prestamista'}), 404
+        
+        # Obtener datos del request
+        data = request.get_json()
+        comment = data.get('comment')
+        
+        if not comment:
+            return jsonify({'error': 'El comentario no puede estar vacío'}), 400
+        
+        # Si ya existe un JSON en notes, conservar la información
+        notes_data = {}
+        if lead.notes:
+            try:
+                notes_data = json.loads(lead.notes)
+                # Si es un lead de scraper, mantener esa información
+                if isinstance(notes_data, dict) and ('real_data' in notes_data or 'ai_generated' in notes_data):
+                    # Preservar datos de contacto pero agregar comentarios
+                    if 'comments' not in notes_data:
+                        notes_data['comments'] = []
+                else:
+                    # Si no es formato esperado, convertir notes a comentario anterior
+                    notes_data = {
+                        'comments': [{'text': lead.notes, 'date': datetime.utcnow().isoformat()}]
+                    }
+            except json.JSONDecodeError:
+                # Si no es JSON válido, convertir notes a comentario anterior
+                notes_data = {
+                    'comments': [{'text': lead.notes, 'date': datetime.utcnow().isoformat()}]
+                }
+        else:
+            notes_data = {'comments': []}
+        
+        # Agregar nuevo comentario
+        if 'comments' not in notes_data:
+            notes_data['comments'] = []
+            
+        notes_data['comments'].append({
+            'text': comment,
+            'date': datetime.utcnow().isoformat(),
+            'user': f"{user.first_name} {user.last_name}"
+        })
+        
+        # Guardar comentarios actualizados
+        lead.notes = json.dumps(notes_data)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Comentario agregado correctamente',
+            'lead': lead_schema.dump(lead)
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR EN ADD LEAD COMMENT: {str(e)}")
         return jsonify({'error': 'Error interno del servidor'}), 500 

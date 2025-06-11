@@ -100,7 +100,7 @@ export default function DashboardPage() {
   if (authLoading || loading) {
     return (
       <AnimatedBackground particleCount={15}>
-        <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-screen">
           <GlassCard className="text-center">
             <motion.div
               className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full mx-auto mb-4"
@@ -109,7 +109,7 @@ export default function DashboardPage() {
             />
             <p className="text-white/80 text-lg">Cargando dashboard...</p>
           </GlassCard>
-        </div>
+      </div>
       </AnimatedBackground>
     );
   }
@@ -125,21 +125,21 @@ export default function DashboardPage() {
       <AnimatedBackground particleCount={20}>
         <div className="min-h-screen pt-20 px-4">
           <div className="max-w-7xl mx-auto space-y-8">
-            {/* Header */}
+      {/* Header */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               className="flex flex-col lg:flex-row lg:items-center lg:justify-between"
             >
-              <div>
+        <div>
                 <motion.h1 
                   className="text-4xl md:text-5xl font-bold text-white mb-2"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2, duration: 0.6 }}
                 >
-                  ¡Hola, {user.first_name}! 👋
+            ¡Hola, {user.first_name}! 👋
                 </motion.h1>
                 <motion.p 
                   className="text-white/70 text-lg"
@@ -147,17 +147,17 @@ export default function DashboardPage() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, duration: 0.6 }}
                 >
-                  {isBorrower ? 'Gestiona tus solicitudes de préstamo' : 'Revisa tus leads y oportunidades'}
+            {isBorrower ? 'Gestiona tus solicitudes de préstamo' : 'Revisa tus leads y oportunidades'}
                 </motion.p>
-              </div>
-              
+        </div>
+        
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4, duration: 0.6 }}
                 className="mt-6 lg:mt-0 flex items-center space-x-4"
               >
-                {profile && isBorrower && (
+        {profile && isBorrower && (
                   <GlassCard className="text-center">
                     <div className="flex items-center space-x-4">
                       <motion.div
@@ -170,11 +170,11 @@ export default function DashboardPage() {
                         <p className="text-white/70 text-sm">Score Katupyry</p>
                         <p className="text-white text-2xl font-bold">{profile.score || 0}</p>
                       </div>
-                    </div>
+          </div>
                   </GlassCard>
-                )}
-                
-                {isLender && (
+        )}
+        
+        {isLender && (
                   <div className="flex items-center space-x-3">
                     <motion.button
                       onClick={handleRefresh}
@@ -203,18 +203,18 @@ export default function DashboardPage() {
                         <div className="text-left">
                           <p className="text-white/70 text-sm">Créditos</p>
                           <p className="text-white text-xl font-bold">{profile?.ai_search_credits || 0}</p>
-                        </div>
+            </div>
                       </div>
                     </GlassCard>
-                  </div>
-                )}
+          </div>
+        )}
               </motion.div>
             </motion.div>
 
-            {/* Stats Cards */}
+      {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {isBorrower && (
-                <>
+        {isBorrower && (
+          <>
                   <motion.div
                     initial={{ opacity: 0, y: 50 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -229,8 +229,8 @@ export default function DashboardPage() {
                         <FiCreditCard className="w-8 h-8 text-white" />
                       </motion.div>
                       <h3 className="text-3xl font-bold text-white mb-2">
-                        {dashboardData?.loanRequests?.length || 0}
-                      </h3>
+                {dashboardData?.loanRequests?.length || 0}
+              </h3>
                       <p className="text-white/70">Mis Solicitudes</p>
                     </GlassCard>
                   </motion.div>
@@ -249,10 +249,10 @@ export default function DashboardPage() {
                         <FiDollarSign className="w-8 h-8 text-white" />
                       </motion.div>
                       <h3 className="text-2xl font-bold text-white mb-2">
-                        {formatCurrency(
-                          dashboardData?.loanRequests?.reduce((sum, loan) => sum + loan.amount, 0) || 0
-                        )}
-                      </h3>
+                {formatCurrency(
+                  dashboardData?.loanRequests?.reduce((sum, loan) => sum + loan.amount, 0) || 0
+                )}
+              </h3>
                       <p className="text-white/70">Monto Total Solicitado</p>
                     </GlassCard>
                   </motion.div>
@@ -271,8 +271,8 @@ export default function DashboardPage() {
                         <FiTrendingUp className="w-8 h-8 text-white" />
                       </motion.div>
                       <h3 className="text-3xl font-bold text-white mb-2">
-                        {profile?.score || 0}
-                      </h3>
+                {profile?.score || 0}
+              </h3>
                       <p className="text-white/70">Score Katupyry</p>
                     </GlassCard>
                   </motion.div>
@@ -291,16 +291,16 @@ export default function DashboardPage() {
                         <FiUsers className="w-8 h-8 text-white" />
                       </motion.div>
                       <h3 className="text-3xl font-bold text-white mb-2">
-                        {dashboardData?.stats?.total_loans || 0}
-                      </h3>
+                {dashboardData?.stats?.total_loans || 0}
+              </h3>
                       <p className="text-white/70">Préstamos en la Plataforma</p>
                     </GlassCard>
                   </motion.div>
-                </>
-              )}
+          </>
+        )}
 
-              {isLender && (
-                <>
+        {isLender && (
+          <>
                   <motion.div
                     initial={{ opacity: 0, y: 50 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -315,8 +315,8 @@ export default function DashboardPage() {
                         <FiUsers className="w-8 h-8 text-white" />
                       </motion.div>
                       <h3 className="text-3xl font-bold text-white mb-2">
-                        {dashboardData?.leads?.length || 0}
-                      </h3>
+                {dashboardData?.leads?.length || 0}
+              </h3>
                       <p className="text-white/70">Leads Disponibles</p>
                     </GlassCard>
                   </motion.div>
@@ -335,8 +335,8 @@ export default function DashboardPage() {
                         <FiCreditCard className="w-8 h-8 text-white" />
                       </motion.div>
                       <h3 className="text-3xl font-bold text-green-300 mb-2">
-                        {profile?.ai_search_credits || 0}
-                      </h3>
+                {profile?.ai_search_credits || 0}
+              </h3>
                       <p className="text-green-200 font-medium">Créditos de Búsqueda</p>
                       <p className="text-green-300/70 text-xs mt-1">Para buscar leads reales</p>
                     </GlassCard>
@@ -356,8 +356,8 @@ export default function DashboardPage() {
                         <FiPackage className="w-8 h-8 text-white" />
                       </motion.div>
                       <h3 className="text-2xl font-bold text-white mb-2">
-                        {profile?.current_package || 'Básico'}
-                      </h3>
+                {profile?.current_package || 'Básico'}
+              </h3>
                       <p className="text-white/70">Paquete Actual</p>
                     </GlassCard>
                   </motion.div>
@@ -376,19 +376,19 @@ export default function DashboardPage() {
                         <FiBarChart className="w-8 h-8 text-white" />
                       </motion.div>
                       <h3 className="text-2xl font-bold text-white mb-2">
-                        {formatCurrency(dashboardData?.stats?.total_amount || 0)}
-                      </h3>
+                {formatCurrency(dashboardData?.stats?.total_amount || 0)}
+              </h3>
                       <p className="text-white/70">Monto Total en Plataforma</p>
                     </GlassCard>
                   </motion.div>
-                </>
-              )}
-            </div>
+          </>
+        )}
+      </div>
 
-            {/* Quick Actions */}
+      {/* Quick Actions */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {isBorrower && (
-                <>
+        {isBorrower && (
+          <>
                   <motion.div
                     initial={{ opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -401,10 +401,10 @@ export default function DashboardPage() {
                       </h3>
                       <div className="space-y-4">
                         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                          <Link
-                            href="/loan-request"
+                <Link
+                  href="/loan-request"
                             className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-xl hover:from-blue-600/30 hover:to-purple-600/30 transition-all duration-300 group"
-                          >
+                >
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                                 <FiPlus className="w-5 h-5 text-white" />
@@ -415,14 +415,14 @@ export default function DashboardPage() {
                               </div>
                             </div>
                             <FiArrowRight className="w-5 h-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
-                          </Link>
+                </Link>
                         </motion.div>
 
                         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                          <Link
+                <Link
                             href="/my-loans"
                             className="flex items-center justify-between p-4 bg-gradient-to-r from-green-600/20 to-emerald-600/20 border border-green-500/30 rounded-xl hover:from-green-600/30 hover:to-emerald-600/30 transition-all duration-300 group"
-                          >
+                >
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
                                 <FiEye className="w-5 h-5 text-white" />
@@ -433,7 +433,7 @@ export default function DashboardPage() {
                               </div>
                             </div>
                             <FiArrowRight className="w-5 h-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
-                          </Link>
+                </Link>
                         </motion.div>
 
                         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
@@ -448,8 +448,8 @@ export default function DashboardPage() {
                               <div>
                                 <p className="text-white font-medium">Mejorar Score</p>
                                 <p className="text-white/60 text-sm">Aprende a aumentar tu puntaje</p>
-                              </div>
-                            </div>
+              </div>
+            </div>
                             <FiArrowRight className="w-5 h-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
                           </Link>
                         </motion.div>
@@ -477,20 +477,20 @@ export default function DashboardPage() {
                             className="p-4 bg-white/5 border border-white/10 rounded-xl"
                           >
                             <div className="flex items-center justify-between">
-                              <div>
+                    <div>
                                 <p className="text-white font-medium">{formatCurrency(loan.amount)}</p>
                                 <p className="text-white/60 text-sm">{loan.purpose}</p>
-                              </div>
+                    </div>
                               <div className="text-right">
                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                                   loan.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
                                   loan.status === 'approved' ? 'bg-green-500/20 text-green-300' :
                                   'bg-red-500/20 text-red-300'
-                                }`}>
-                                  {loan.status === 'pending' ? 'Pendiente' :
-                                   loan.status === 'approved' ? 'Aprobado' : 'Rechazado'}
-                                </span>
-                              </div>
+                    }`}>
+                      {loan.status === 'pending' ? 'Pendiente' :
+                       loan.status === 'approved' ? 'Aprobado' : 'Rechazado'}
+                    </span>
+                  </div>
                             </div>
                           </motion.div>
                         )) || (
@@ -503,15 +503,15 @@ export default function DashboardPage() {
                               Crear tu primera solicitud →
                             </Link>
                           </div>
-                        )}
-                      </div>
+                )}
+              </div>
                     </GlassCard>
                   </motion.div>
-                </>
-              )}
+          </>
+        )}
 
-              {isLender && (
-                <>
+        {isLender && (
+          <>
                   <motion.div
                     initial={{ opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -524,10 +524,10 @@ export default function DashboardPage() {
                       </h3>
                       <div className="space-y-4">
                         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                          <Link
-                            href="/leads"
+                <Link
+                  href="/leads"
                             className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-xl hover:from-blue-600/30 hover:to-purple-600/30 transition-all duration-300 group"
-                          >
+                >
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                                 <FiUsers className="w-5 h-5 text-white" />
@@ -538,14 +538,14 @@ export default function DashboardPage() {
                               </div>
                             </div>
                             <FiArrowRight className="w-5 h-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
-                          </Link>
+                </Link>
                         </motion.div>
 
                         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                          <Link
+                <Link
                             href="/ai-lead-finder"
                             className="flex items-center justify-between p-4 bg-gradient-to-r from-green-600/20 to-emerald-600/20 border border-green-500/30 rounded-xl hover:from-green-600/30 hover:to-emerald-600/30 transition-all duration-300 group"
-                          >
+                >
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
                                 <FiActivity className="w-5 h-5 text-white" />
@@ -556,7 +556,7 @@ export default function DashboardPage() {
                               </div>
                             </div>
                             <FiArrowRight className="w-5 h-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
-                          </Link>
+                </Link>
                         </motion.div>
 
                         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
@@ -571,8 +571,8 @@ export default function DashboardPage() {
                               <div>
                                 <p className="text-white font-medium">Suscripciones</p>
                                 <p className="text-white/60 text-sm">Gestiona tu plan y créditos</p>
-                              </div>
-                            </div>
+              </div>
+            </div>
                             <FiArrowRight className="w-5 h-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
                           </Link>
                         </motion.div>
@@ -600,7 +600,7 @@ export default function DashboardPage() {
                             className="p-4 bg-white/5 border border-white/10 rounded-xl"
                           >
                             <div className="flex items-center justify-between">
-                              <div>
+                    <div>
                                 <p className="text-white font-medium">{formatCurrency(lead.amount)}</p>
                                 <p className="text-white/60 text-sm">{lead.purpose}</p>
                               </div>
@@ -608,7 +608,7 @@ export default function DashboardPage() {
                                 <p className="text-white/80 text-sm">Score: {lead.score}</p>
                                 <p className="text-white/60 text-xs">{lead.city}</p>
                               </div>
-                            </div>
+                    </div>
                           </motion.div>
                         )) || (
                           <div className="text-center py-8">
@@ -619,13 +619,13 @@ export default function DashboardPage() {
                             >
                               Explorar leads →
                             </Link>
-                          </div>
-                        )}
-                      </div>
+                  </div>
+                )}
+              </div>
                     </GlassCard>
                   </motion.div>
-                </>
-              )}
+          </>
+        )}
             </div>
           </div>
         </div>

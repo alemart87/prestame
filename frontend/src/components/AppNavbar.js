@@ -64,6 +64,7 @@ const AppNavbar = () => {
         ...commonItems,
         { href: '/loan-request', label: 'Solicitar Préstamo', icon: FiSend },
         { href: '/my-loans', label: 'Mis Préstamos', icon: FiClock },
+        { href: '/financial-analysis', label: 'Análisis de Fiabilidad', icon: FiShield },
         { href: '/how-it-works', label: '¿Cómo funciona?', icon: FiHelpCircle },
       ];
     }
@@ -73,6 +74,7 @@ const AppNavbar = () => {
         ...commonItems,
         { href: '/leads', label: 'Ver Leads', icon: FiStar },
         { href: '/ai-lead-finder', label: 'Buscar con IA', icon: FiCpu },
+        { href: '/financial-analysis', label: 'Análisis de Fiabilidad', icon: FiShield },
         { href: '/loans', label: 'Préstamos Activos', icon: FiBriefcase },
         { href: '/subscriptions', label: 'Planes', icon: FiCreditCard },
         { href: '/how-it-works', label: '¿Cómo funciona?', icon: FiHelpCircle },
