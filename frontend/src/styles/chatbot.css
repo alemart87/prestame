@@ -1,0 +1,483 @@
+/* Estilos personalizados para el chatbot */
+.chatbot-container-glass {
+  position: relative;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Asegurar que el chatbot ocupe todo el espacio */
+.react-chatbot-kit-main-container {
+  height: 100% !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.react-chatbot-kit-chat-container {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.react-chatbot-kit-chat-message-container {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+
+.react-chatbot-kit-chat-input-container {
+  flex-shrink: 0 !important;
+}
+
+/* Scrollbar personalizada */
+.react-chatbot-kit-chat-message-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.react-chatbot-kit-chat-message-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.react-chatbot-kit-chat-message-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.react-chatbot-kit-chat-message-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Animaciones para mensajes */
+.react-chatbot-kit-chat-bot-message,
+.react-chatbot-kit-user-chat-message {
+  animation: messageSlideIn 0.3s ease-out;
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Efecto de escritura */
+.react-chatbot-kit-chat-bot-loading {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.react-chatbot-kit-chat-bot-loading::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  animation: typing 1.4s infinite ease-in-out;
+  margin-left: 8px;
+}
+
+@keyframes typing {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Input focus effects */
+.react-chatbot-kit-chat-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* Button hover effects */
+.react-chatbot-kit-chat-btn-send:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 12px 35px rgba(99, 102, 241, 0.4) !important;
+}
+
+/* Override completo para el chatbot */
+.chatbot-override .react-chatbot-kit-main-container {
+  height: 600px !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.chatbot-override .react-chatbot-kit-chat-container {
+  height: 100% !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: transparent !important;
+}
+
+.chatbot-override .react-chatbot-kit-chat-message-container {
+  flex: 1 1 auto !important;
+  height: auto !important;
+  min-height: 400px !important;
+  max-height: none !important;
+  padding: 20px !important;
+  background: transparent !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.chatbot-override .react-chatbot-kit-chat-input-container {
+  flex-shrink: 0 !important;
+  background: rgba(0,0,0,0.4) !important;
+  backdrop-filter: blur(20px) !important;
+  padding: 16px 20px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0 !important;
+}
+
+.chatbot-override .react-chatbot-kit-chat-input-form {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.chatbot-override .react-chatbot-kit-chat-input {
+  background: rgba(255,255,255,0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 20px !important;
+  padding: 12px 16px !important;
+  width: 100% !important;
+  font-size: 14px !important;
+  outline: none !important;
+}
+
+.chatbot-override .react-chatbot-kit-chat-input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.chatbot-override .react-chatbot-kit-chat-input:focus {
+  border-color: rgba(99, 102, 241, 0.5) !important;
+  background: rgba(255,255,255,0.15) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+}
+
+.chatbot-override .react-chatbot-kit-chat-btn-send {
+  background: #6366f1 !important;
+  border-radius: 50% !important;
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3) !important;
+  transition: all 0.3s ease !important;
+  border: none !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+}
+
+.chatbot-override .react-chatbot-kit-chat-btn-send:hover {
+  background: #4f46e5 !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 12px 35px rgba(99, 102, 241, 0.4) !important;
+}
+
+.chatbot-override .react-chatbot-kit-chat-btn-send svg {
+  color: white !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* ARREGLAR LAS BURBUJAS DE MENSAJES */
+
+/* Contenedor de cada mensaje del bot */
+.chatbot-override .react-chatbot-kit-chat-bot-message-container {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  margin-bottom: 16px !important;
+  width: 100% !important;
+}
+
+/* Contenedor de cada mensaje del usuario */
+.chatbot-override .react-chatbot-kit-user-chat-message-container {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: flex-end !important;
+  margin-bottom: 16px !important;
+  width: 100% !important;
+}
+
+/* Mensaje del bot */
+.chatbot-override .react-chatbot-kit-chat-bot-message {
+  background: rgba(79, 70, 229, 0.2) !important;
+  backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 16px 16px 16px 4px !important;
+  max-width: 75% !important;
+  margin: 0 !important;
+  padding: 12px 16px !important;
+  box-shadow: 0 8px 32px rgba(79, 70, 229, 0.15) !important;
+  color: white !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  word-wrap: break-word !important;
+  position: relative !important;
+}
+
+/* Mensaje del usuario */
+.chatbot-override .react-chatbot-kit-user-chat-message {
+  background: rgba(37, 99, 235, 0.25) !important;
+  backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 16px 16px 4px 16px !important;
+  max-width: 75% !important;
+  margin: 0 !important;
+  padding: 12px 16px !important;
+  box-shadow: 0 8px 32px rgba(37, 99, 235, 0.15) !important;
+  color: white !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  word-wrap: break-word !important;
+  position: relative !important;
+}
+
+/* Avatares */
+.chatbot-override .react-chatbot-kit-chat-bot-avatar {
+  margin-right: 12px !important;
+  margin-top: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.chatbot-override .react-chatbot-kit-user-avatar {
+  margin-left: 12px !important;
+  margin-top: 0 !important;
+  flex-shrink: 0 !important;
+  order: 2 !important;
+}
+
+/* Header personalizado */
+.chatbot-override .react-chatbot-kit-chat-header {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* Scrollbar */
+.chatbot-override .react-chatbot-kit-chat-message-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chatbot-override .react-chatbot-kit-chat-message-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.chatbot-override .react-chatbot-kit-chat-message-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.chatbot-override .react-chatbot-kit-chat-message-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Animaciones */
+.chatbot-override .react-chatbot-kit-chat-bot-message,
+.chatbot-override .react-chatbot-kit-user-chat-message {
+  animation: messageSlideIn 0.3s ease-out;
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Limpiar cualquier float o posicionamiento extraño */
+.chatbot-override * {
+  float: none !important;
+  position: relative !important;
+}
+
+.chatbot-override .react-chatbot-kit-chat-bot-message-container *,
+.chatbot-override .react-chatbot-kit-user-chat-message-container * {
+  position: relative !important;
+}
+
+/* Asegurar que los contenedores de mensajes no tengan conflictos */
+.chatbot-override .react-chatbot-kit-chat-bot-message-container {
+  clear: both !important;
+}
+
+.chatbot-override .react-chatbot-kit-user-chat-message-container {
+  clear: both !important;
+}
+
+/* --- OVERRIDE COMPLETO Y PROFESIONAL PARA REACT-CHATBOT-KIT --- */
+
+.chatbot-override {
+  height: 100%;
+  width: 100%;
+}
+
+.chatbot-override .react-chatbot-kit-chat-container {
+  font-family: 'Inter', sans-serif;
+  width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+  border-radius: 1rem !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: none !important;
+}
+
+/* --- Contenedor de Mensajes (Scroll y Layout) --- */
+.chatbot-override .react-chatbot-kit-chat-message-container {
+  flex: 1 1 auto !important;
+  padding: 1.5rem !important;
+  overflow-y: auto !important;
+  background: transparent !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.chatbot-override .react-chatbot-kit-chat-message-container::-webkit-scrollbar {
+  width: 6px;
+}
+.chatbot-override .react-chatbot-kit-chat-message-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chatbot-override .react-chatbot-kit-chat-message-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+/* --- Contenedor de cada línea de mensaje (Bot y Usuario) --- */
+.chatbot-override .react-chatbot-kit-chat-bot-message-container,
+.chatbot-override .react-chatbot-kit-user-chat-message-container {
+  display: flex !important;
+  align-items: flex-end !important;
+  margin-bottom: 1.25rem !important;
+  gap: 0.75rem;
+}
+
+/* Alineación para mensajes del usuario */
+.chatbot-override .react-chatbot-kit-user-chat-message-container {
+  justify-content: flex-end !important;
+}
+.chatbot-override .react-chatbot-kit-user-avatar-container {
+  order: 2;
+}
+
+/* --- Burbujas de Mensajes (Estilo, Contraste y Forma) --- */
+.chatbot-override .react-chatbot-kit-chat-bot-message,
+.chatbot-override .react-chatbot-kit-user-chat-message {
+  padding: 0.75rem 1rem !important;
+  font-size: 0.9rem !important;
+  line-height: 1.5 !important;
+  color: #E5E7EB !important; /* Gris claro para texto */
+  max-width: 75% !important;
+  overflow-wrap: break-word !important;
+  animation: messageFadeIn 0.3s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Burbuja del Bot */
+.chatbot-override .react-chatbot-kit-chat-bot-message {
+  background: rgba(86, 76, 175, 0.5) !important; /* Morado con más contraste */
+  backdrop-filter: blur(12px) !important;
+  border-radius: 1.25rem 1.25rem 1.25rem 0.375rem !important; /* La esquina "afilada" actúa como cola */
+}
+
+/* Burbuja del Usuario */
+.chatbot-override .react-chatbot-kit-user-chat-message {
+  background: rgba(55, 65, 81, 0.5) !important; /* Gris azulado con buen contraste */
+  backdrop-filter: blur(12px) !important;
+  color: white !important;
+  border-radius: 1.25rem 1.25rem 0.375rem 1.25rem !important; /* Cola en la otra esquina */
+}
+
+@keyframes messageFadeIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* --- Área de Input --- */
+.chatbot-override .react-chatbot-kit-chat-input-container {
+  padding: 1rem 1.5rem !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.chatbot-override .react-chatbot-kit-chat-input-form {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+}
+
+.chatbot-override .react-chatbot-kit-chat-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: white !important;
+  border-radius: 9999px !important;
+  padding: 0.75rem 1.25rem !important;
+  font-size: 0.9rem !important;
+  transition: all 0.2s ease-in-out !important;
+}
+.chatbot-override .react-chatbot-kit-chat-input:focus {
+  outline: none !important;
+  border-color: rgba(129, 140, 248, 0.7) !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2) !important;
+}
+.chatbot-override .react-chatbot-kit-chat-input::placeholder {
+  color: #9CA3AF;
+}
+
+/* --- Botón de Envío --- */
+.chatbot-override .react-chatbot-kit-chat-btn-send {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: #6366F1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease-in-out !important;
+}
+.chatbot-override .react-chatbot-kit-chat-btn-send:hover {
+  background: #4F46E5 !important;
+  transform: scale(1.05);
+}
+.chatbot-override .react-chatbot-kit-chat-btn-send svg {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  fill: white !important;
+} 

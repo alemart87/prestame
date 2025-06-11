@@ -6,8 +6,13 @@ export const createMessageParser = () => {
     }
 
     parse(message) {
-      if (message) {
-        this.actionProvider.handleUserMessage(message);
+      const cleanMessage = message.trim();
+      
+      if (cleanMessage) {
+        // Agregar pequeño delay para simular procesamiento natural
+        setTimeout(() => {
+          this.actionProvider.handleUserMessage(cleanMessage);
+        }, 300);
       }
     }
   }
