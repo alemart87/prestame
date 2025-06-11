@@ -210,184 +210,175 @@ class OpenAIService:
 
     def analyze_conversation_transcript(self, transcript):
         try:
-            current_app.logger.info(f"Analizando transcripción de conversación. Longitud total: {len(transcript)} caracteres. Primeros 100 caracteres (solo para log): {transcript[:100]}...")
+            current_app.logger.info(f"Iniciando análisis financiero del thread completo")
             
-            # Verificar que la transcripción tiene suficiente contenido
-            if len(transcript) < 50:
-                current_app.logger.warning("La transcripción es muy corta para un análisis significativo")
-                return json.dumps({
-                    "linguistic_score": 0,
-                    "analysis_summary": "La conversación es demasiado corta para realizar un análisis significativo.",
-                    "key_indicators": ["Conversación insuficiente"]
-                })
-                
-            prompt = ANALYSIS_PROMPT.format(transcript=transcript)
-            current_app.logger.info(f"Prompt formateado para análisis. Longitud: {len(prompt)} caracteres")
-            current_app.logger.info("NOTA: Se está enviando la transcripción COMPLETA para análisis")
+            # En lugar de analizar manualmente, le pedimos a OpenAI que haga el análisis financiero
+            analysis_prompt = """
+            Eres un experto analista financiero. Analiza esta conversación completa con un cliente y proporciona:
+
+            1. Una puntuación de fiabilidad crediticia del 0 al 100 basada en:
+               - Estabilidad de ingresos mencionada
+               - Historial crediticio comentado
+               - Actitud hacia las deudas y pagos
+               - Transparencia en las respuestas
+               - Consistencia en la información proporcionada
+
+            2. Un resumen ejecutivo del perfil financiero del cliente
+
+            3. Indicadores clave identificados en la conversación
+
+            Responde ÚNICAMENTE en formato JSON válido con esta estructura exacta:
+            {
+                "linguistic_score": [número del 0 al 100],
+                "analysis_summary": "[resumen ejecutivo del análisis financiero]",
+                "key_indicators": ["indicador1", "indicador2", "indicador3"]
+            }
+
+            Conversación a analizar:
+            """ + transcript
+
+            current_app.logger.info("Enviando solicitud de análisis financiero a OpenAI...")
             
-            # Verificar que la API key es válida antes de continuar
+            # Verificar API key
             if not self.api_key or len(self.api_key) < 20:
-                current_app.logger.error(f"API key de OpenAI no válida o demasiado corta: {self.api_key[:5]}...")
+                current_app.logger.error("API key de OpenAI no válida")
                 raise ValueError("API key de OpenAI no válida para análisis")
                 
-            # Actualizar headers para asegurar que la API key es correcta
+            # Headers actualizados
             self.headers = {
                 "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-                "OpenAI-Beta": "assistants=v2"
+                "Content-Type": "application/json"
             }
             
-            current_app.logger.info("Enviando solicitud a OpenAI para análisis...")
+            # Solicitud a OpenAI para análisis financiero
             response = self.http_client.post(
                 f"{self.api_base_url}/chat/completions",
                 headers=self.headers,
                 json={
-                    "model": "gpt-4o",  # Actualizado al modelo más reciente
+                    "model": "gpt-4o",
                     "messages": [
                         {
                             "role": "system",
-                            "content": prompt
+                            "content": "Eres un experto analista financiero especializado en evaluación crediticia."
+                        },
+                        {
+                            "role": "user", 
+                            "content": analysis_prompt
                         }
                     ],
-                    "response_format": {"type": "json_object"}
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0.3  # Más determinístico para análisis financiero
                 },
-                timeout=60.0  # Aumentar timeout para asegurar respuesta
+                timeout=60.0
             )
             
-            current_app.logger.info(f"Respuesta recibida de OpenAI. Código de estado: {response.status_code}")
+            current_app.logger.info(f"Respuesta de análisis recibida. Status: {response.status_code}")
             
             if response.status_code != 200:
-                current_app.logger.error(f"Error en la respuesta de OpenAI: {response.text}")
-                raise Exception(f"Error de OpenAI: {response.status_code}")
+                current_app.logger.error(f"Error en análisis OpenAI: {response.text}")
+                raise Exception(f"Error de OpenAI en análisis: {response.status_code}")
                 
-            response.raise_for_status()
             result = response.json()
+            analysis_content = result.get("choices", [{}])[0].get("message", {}).get("content", "{}")
             
-            content = result.get("choices", [{}])[0].get("message", {}).get("content", "{}")
-            current_app.logger.info(f"Contenido de la respuesta recibida (primeros 100 caracteres, solo para log): {content[:100]}...")
+            current_app.logger.info(f"Análisis recibido: {analysis_content[:100]}...")
             
-            # Limpiar el contenido y formatear correctamente
-            content = content.strip()
-            
-            # Limpiar caracteres problemáticos que puedan aparecer al inicio
-            if content.startswith('\n'):
-                content = content.lstrip('\n')
-                current_app.logger.warning(f"Se eliminaron saltos de línea al inicio: {content[:50]}...")
-                
-            # Reconstruir JSON si es necesario
+            # Parsear el JSON de respuesta
             try:
-                # Intentar cargar el JSON tal como está
-                parsed_json = json.loads(content)
-            except json.JSONDecodeError as je:
-                current_app.logger.warning(f"Error al decodificar JSON: {je}, intentando reparar...")
+                analysis_json = json.loads(analysis_content)
+            except json.JSONDecodeError as e:
+                current_app.logger.error(f"Error parseando JSON de análisis: {e}")
+                # Fallback si el JSON está mal formateado
+                analysis_json = {
+                    "linguistic_score": 50,
+                    "analysis_summary": "No se pudo completar el análisis debido a un error de formato.",
+                    "key_indicators": ["Error en formato de respuesta"]
+                }
+            
+            # Validar y limpiar los datos
+            if 'linguistic_score' not in analysis_json:
+                analysis_json['linguistic_score'] = 50
                 
-                # Intentar reparar el JSON antes de cargarlo
-                if not content.startswith('{'):
-                    content = '{' + content.split('{', 1)[1] if '{' in content else '{"linguistic_score": 50}'
+            if 'analysis_summary' not in analysis_json:
+                analysis_json['analysis_summary'] = "Análisis no disponible."
                 
-                if not content.endswith('}'):
-                    content = content.rstrip() + '}'
-                
-                try:
-                    parsed_json = json.loads(content)
-                except json.JSONDecodeError:
-                    # Si todavía falla, crear un objeto JSON básico
-                    parsed_json = {
-                        "linguistic_score": 50,
-                        "analysis_summary": "No fue posible analizar la conversación debido a un error de formato.",
-                        "key_indicators": ["Error en el formato de respuesta"]
-                    }
+            if 'key_indicators' not in analysis_json:
+                analysis_json['key_indicators'] = ["No se identificaron indicadores"]
             
-            # Asegurar que tenga los campos requeridos
-            if 'linguistic_score' not in parsed_json:
-                parsed_json['linguistic_score'] = 50  # Valor por defecto
-                current_app.logger.warning("Campo 'linguistic_score' no encontrado, asignando valor por defecto")
-            
-            if 'analysis_summary' not in parsed_json:
-                parsed_json['analysis_summary'] = "No fue posible generar un análisis detallado."
-                current_app.logger.warning("Campo 'analysis_summary' no encontrado, asignando valor por defecto")
-            
-            if 'key_indicators' not in parsed_json:
-                parsed_json['key_indicators'] = ["No se identificaron indicadores clave"]
-                current_app.logger.warning("Campo 'key_indicators' no encontrado, asignando valor por defecto")
-            
-            # Asegurar que la puntuación es un entero
+            # Asegurar que la puntuación esté en rango válido
             try:
-                # Manejar tanto string como número
-                if isinstance(parsed_json['linguistic_score'], str):
-                    # Limpiar posibles caracteres no numéricos
-                    score_str = ''.join(c for c in parsed_json['linguistic_score'] if c.isdigit() or c == '.')
-                    if score_str:
-                        parsed_json['linguistic_score'] = int(float(score_str))
-                    else:
-                        parsed_json['linguistic_score'] = 50
-                else:
-                    parsed_json['linguistic_score'] = int(parsed_json['linguistic_score'])
-            except (ValueError, TypeError) as e:
-                current_app.logger.warning(f"Error al convertir puntuación: {e}. Estableciendo valor por defecto")
-                parsed_json['linguistic_score'] = 50
+                score = int(analysis_json['linguistic_score'])
+                analysis_json['linguistic_score'] = max(0, min(100, score))
+            except (ValueError, TypeError):
+                analysis_json['linguistic_score'] = 50
                 
-            # Asegurar que la puntuación está en el rango correcto (0-100)
-            if parsed_json['linguistic_score'] < 0 or parsed_json['linguistic_score'] > 100:
-                current_app.logger.warning(f"Puntuación fuera de rango: {parsed_json['linguistic_score']}, ajustando...")
-                parsed_json['linguistic_score'] = max(0, min(100, parsed_json['linguistic_score']))
+            current_app.logger.info(f"Análisis completado. Puntuación: {analysis_json['linguistic_score']}")
             
-            # Devolver el JSON completo y bien formateado
-            return json.dumps(parsed_json)
-                
+            return json.dumps(analysis_json)
+            
         except Exception as e:
-            current_app.logger.error(f"Error al analizar la transcripción: {str(e)}")
-            # Crear un JSON manual como fallback para cualquier error
-            fallback_json = {
+            current_app.logger.error(f"Error en análisis financiero: {str(e)}")
+            # Fallback para cualquier error
+            fallback_analysis = {
                 "linguistic_score": 50,
-                "analysis_summary": f"Error al procesar el análisis: {str(e)}",
-                "key_indicators": ["Error en el procesamiento"]
+                "analysis_summary": f"Error al procesar el análisis financiero: {str(e)}",
+                "key_indicators": ["Error en procesamiento"]
             }
-            return json.dumps(fallback_json)
-    
+            return json.dumps(fallback_analysis)
+
     def get_full_transcript(self, thread_id):
         try:
-            current_app.logger.info(f"Solicitando mensajes para el thread: {thread_id}")
-            current_app.logger.info(f"URL de solicitud: {self.api_base_url}/threads/{thread_id}/messages")
+            current_app.logger.info(f"Obteniendo transcripción completa del thread: {thread_id}")
             
-            # Verificar que la API key es válida
+            # Verificar API key
             if not self.api_key or len(self.api_key) < 20:
-                current_app.logger.error(f"API key de OpenAI no válida o demasiado corta: {self.api_key[:5]}...")
+                current_app.logger.error("API key de OpenAI no válida")
                 raise ValueError("API key de OpenAI no válida")
                 
-            current_app.logger.info(f"Autenticación: Bearer {self.api_key[:5]}...{self.api_key[-5:] if len(self.api_key) > 10 else ''}")
-            
-            # Actualizar headers para asegurar que la API key es correcta
+            # Headers para API de threads
             self.headers = {
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
                 "OpenAI-Beta": "assistants=v2"
             }
             
+            # Obtener todos los mensajes del thread
             response = self.http_client.get(
                 f"{self.api_base_url}/threads/{thread_id}/messages",
                 headers=self.headers,
-                params={"order": "asc"}
+                params={"order": "asc", "limit": 100}  # Obtener hasta 100 mensajes
             )
             
-            current_app.logger.info(f"Respuesta recibida. Código de estado: {response.status_code}")
+            current_app.logger.info(f"Respuesta de mensajes recibida. Status: {response.status_code}")
             
             if response.status_code != 200:
-                current_app.logger.error(f"Error en la respuesta: {response.text}")
-                raise Exception(f"Error al obtener mensajes de OpenAI: {response.status_code}")
-            
-            response.raise_for_status()
+                current_app.logger.error(f"Error obteniendo mensajes: {response.text}")
+                raise Exception(f"Error al obtener mensajes: {response.status_code}")
+                
             messages_data = response.json()
             
-            transcript = ""
-            for msg in messages_data.get("data", []):
-                role = "Solicitante" if msg.get("role") == 'user' else "Katupyry-IA"
-                content = msg.get("content", [{}])[0].get("text", {}).get("value", "")
-                transcript += f"{role}: {content}\n"
+            # Construir transcripción completa
+            transcript = "=== CONVERSACIÓN FINANCIERA ===\n\n"
             
-            current_app.logger.info(f"Transcripción obtenida correctamente. Longitud: {len(transcript)} caracteres")
+            for msg in messages_data.get("data", []):
+                role = msg.get("role")
+                content_blocks = msg.get("content", [])
+                
+                if content_blocks and len(content_blocks) > 0:
+                    content = content_blocks[0].get("text", {}).get("value", "")
+                    
+                    if role == "user":
+                        transcript += f"CLIENTE: {content}\n\n"
+                    elif role == "assistant":
+                        transcript += f"KATUPYRY-IA: {content}\n\n"
+            
+            transcript += "=== FIN DE CONVERSACIÓN ===\n"
+            
+            current_app.logger.info(f"Transcripción construida. Longitud: {len(transcript)} caracteres")
+            current_app.logger.info(f"Número de mensajes procesados: {len(messages_data.get('data', []))}")
+            
             return transcript
             
         except Exception as e:
-            current_app.logger.error(f"Error al obtener la transcripción del thread {thread_id}: {e}")
+            current_app.logger.error(f"Error obteniendo transcripción del thread {thread_id}: {e}")
             raise 

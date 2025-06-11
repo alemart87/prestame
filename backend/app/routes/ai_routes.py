@@ -153,6 +153,10 @@ def analyze_conversation():
         if not summary or not isinstance(summary, str):
             summary = "No se pudo generar un análisis detallado."
         
+        # Verificar que key_indicators es una lista
+        if not isinstance(key_indicators, list):
+            key_indicators = []
+        
         # Guardar los resultados en la base de datos
         current_app.logger.info("Guardando resultados en la base de datos...")
         
@@ -166,6 +170,7 @@ def analyze_conversation():
                 # Actualizar los campos
                 db_conversation.linguistic_score = score
                 db_conversation.linguistic_analysis = summary
+                db_conversation.set_key_indicators(key_indicators)  # Guardar indicadores clave
                 
                 # Asegurar que se actualiza el campo updated_at
                 from datetime import datetime
@@ -173,7 +178,7 @@ def analyze_conversation():
                 
                 # Commit los cambios
                 db.session.commit()
-                current_app.logger.info(f"Análisis guardado correctamente en la base de datos. Score: {score}")
+                current_app.logger.info(f"Análisis guardado correctamente en la base de datos. Score: {score}, Indicadores: {len(key_indicators)}")
             else:
                 current_app.logger.error("No se pudo obtener la conversación para actualizar")
                 return jsonify({"error": "Error al acceder a los datos de la conversación"}), 500
@@ -185,7 +190,7 @@ def analyze_conversation():
 
         # Incluir los indicadores clave en la respuesta
         analysis_response = {
-            "message": "Análisis completado y guardado.",
+            "message": "Análisis completado y guardado con indicadores clave.",
             "analysis": {
                 "linguistic_score": score,
                 "analysis_summary": summary,
@@ -238,6 +243,7 @@ def get_conversation_history():
         analysis = {
             "score": ai_conversation.linguistic_score,
             "summary": ai_conversation.linguistic_analysis,
+            "key_indicators": ai_conversation.get_key_indicators(),  # Incluir indicadores clave
             "updated_at": ai_conversation.updated_at.isoformat() if ai_conversation.updated_at and ai_conversation.linguistic_score is not None else None
         }
 

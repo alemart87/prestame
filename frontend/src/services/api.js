@@ -171,35 +171,37 @@ export const aiService = {
   },
 
   // Analizar la conversación completa y obtener una puntuación
-  analyzeConversation: async () => {
+  async analyzeConversation() {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-
+      console.log('Enviando solicitud de análisis...');
       const response = await fetch(`${API_BASE_URL}/ai/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
 
+      console.log('Respuesta recibida:', response.status);
+
       if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem('token');
-          throw new Error('Sesión expirada, por favor inicia sesión de nuevo');
-        }
-        
         const errorData = await response.json();
+        console.error('Error en la respuesta:', errorData);
         throw new Error(errorData.error || 'Error al analizar la conversación');
       }
 
       const data = await response.json();
-      return data.analysis;
+      console.log('Datos del análisis:', data);
+
+      // El backend devuelve la estructura: { message: "...", analysis: { ... } }
+      // Necesitamos extraer solo la parte del analysis
+      if (data.analysis) {
+        return data.analysis;
+      } else {
+        throw new Error('Respuesta del análisis no tiene el formato esperado');
+      }
     } catch (error) {
-      console.error('Error en aiService.analyzeConversation:', error);
+      console.error('Error en analyzeConversation:', error);
       throw error;
     }
   },
