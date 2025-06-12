@@ -316,4 +316,67 @@ def create_leads_checkout():
         current_app.logger.error(f"Tipo de error: {type(e)}")
         import traceback
         current_app.logger.error(f"Traceback: {traceback.format_exc()}")
-        return jsonify(error=str(e)), 500 
+        return jsonify(error=str(e)), 500
+
+@stripe_bp.route('/webhook/stripe', methods=['POST'])
+def stripe_webhook():
+    """
+    Webhook de Stripe para procesar eventos de pago y suscripción automáticamente.
+    Asigna créditos o activa suscripciones cuando el pago es exitoso.
+    """
+    payload = request.data
+    sig_header = request.headers.get('Stripe-Signature')
+    endpoint_secret = current_app.config.get('STRIPE_WEBHOOK_SECRET')
+    event = None
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, endpoint_secret
+        )
+    except ValueError as e:
+        # Invalid payload
+        return jsonify({'error': 'Payload inválido'}), 400
+    except stripe.error.SignatureVerificationError as e:
+        # Invalid signature
+        return jsonify({'error': 'Firma de Stripe inválida'}), 400
+
+    # Procesar solo eventos relevantes
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        customer_id = session.get('customer')
+        mode = session.get('mode')
+        # Buscar usuario por stripe_customer_id
+        user = User.query.filter_by(stripe_customer_id=customer_id).first()
+        if not user or not user.lender_profile:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        lender_profile = user.lender_profile
+
+        if mode == 'subscription':
+            subscription_id = session.get('subscription')
+            subscription = stripe.Subscription.retrieve(subscription_id)
+            price_id = subscription['items']['data'][0]['price']['id']
+            lender_profile.stripe_subscription_id = subscription_id
+            lender_profile.subscription_status = subscription['status']
+            lender_profile.lead_credits += SUBSCRIPTION_PLANS.get(price_id, 0)
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': f'Suscripción activada. {SUBSCRIPTION_PLANS.get(price_id, 0)} leads añadidos.'}), 200
+        elif mode == 'payment':
+            # Compra única de leads
+            line_items = stripe.checkout.Session.list_line_items(session['id'], limit=1)
+            price_id = line_items.data[0].price.id
+            quantity = line_items.data[0].quantity
+            if price_id == LEAD_PRICING['price_id']:
+                lender_profile.lead_credits += quantity
+                message = f'¡Compra exitosa! Se han añadido {quantity} leads a tu cuenta.'
+            else:
+                credits_to_add = LEAD_PACKAGES.get(price_id, 0)
+                if price_id == 'price_1RXv0UGMLNY8JgDphalXJuz2':
+                    lender_profile.ai_search_credits += credits_to_add
+                    message = f'¡Compra exitosa! Se han añadido {credits_to_add} créditos de búsqueda con IA a tu cuenta.'
+                else:
+                    lender_profile.lead_credits += credits_to_add
+                    message = f'¡Compra exitosa! Se han añadido {credits_to_add} leads a tu cuenta.'
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': message}), 200
+    # Otros eventos pueden ser procesados aquí si es necesario
+    return jsonify({'status': 'ignored', 'message': 'Evento no relevante'}), 200 
