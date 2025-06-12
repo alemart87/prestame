@@ -2,96 +2,50 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useRouter } from 'next/navigation';
 import { loanService } from '../../services/api';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   FiDollarSign, 
-  FiCalendar, 
   FiUser, 
-  FiFilter,
-  FiSearch,
   FiTrendingUp,
   FiClock,
-  FiMapPin,
-  FiRefreshCw,
-  FiChevronDown,
-  FiX
+  FiShield,
+  FiArrowRight,
+  FiEye,
+  FiLock
 } from 'react-icons/fi';
 import AppNavbar from '../../components/AppNavbar';
 import AnimatedBackground from '../../components/AnimatedBackground';
 import GlassCard from '../../components/GlassCard';
-import ScoreDisplay from '../../components/ScoreDisplay';
+import Link from 'next/link';
 
 export default function LoansPage() {
-  const { user, isLender } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [loans, setLoans] = useState([]);
+  const { user, isLender, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [stats, setStats] = useState(null);
-  const [error, setError] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  
-  const [filters, setFilters] = useState({
-    minAmount: '',
-    maxAmount: '',
-    purpose: '',
-    paymentFrequency: '',
-    minScore: '',
-    search: ''
-  });
-
-  const [showFilters, setShowFilters] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
-  }, [currentPage]);
+    // Si es prestamista autenticado, redirigir a la página de leads
+    if (!authLoading && user && isLender) {
+      router.push('/leads');
+      return;
+    }
+    
+    // Cargar solo estadísticas generales
+    loadStats();
+  }, [user, isLender, authLoading, router]);
 
-  const loadData = async () => {
+  const loadStats = async () => {
     try {
-      setLoading(true);
-      const [loansResponse, statsResponse] = await Promise.all([
-        loanService.getPublicLoans(currentPage, 12),
-        loanService.getLoanStats()
-      ]);
-      
-      setLoans(loansResponse.data.loan_requests || []);
-      setTotalPages(loansResponse.data.total_pages || 1);
+      const statsResponse = await loanService.getLoanStats();
       setStats(statsResponse.data);
     } catch (err) {
-      setError('Error al cargar los préstamos');
       console.error('Error:', err);
     } finally {
       setLoading(false);
     }
-  };
-
-  const filteredLoans = loans.filter(loan => {
-    const { minAmount, maxAmount, purpose, paymentFrequency, minScore, search } = filters;
-    if (minAmount && loan.amount < parseFloat(minAmount)) return false;
-    if (maxAmount && loan.amount > parseFloat(maxAmount)) return false;
-    if (purpose && loan.purpose !== purpose) return false;
-    if (paymentFrequency && loan.payment_frequency !== paymentFrequency) return false;
-    if (minScore && (loan.borrower_score || 0) < parseFloat(minScore)) return false;
-    if (search) {
-      const searchTerm = search.toLowerCase();
-      if (
-        !loan.purpose?.toLowerCase().includes(searchTerm) &&
-        !loan.description?.toLowerCase().includes(searchTerm)
-      ) return false;
-    }
-    return true;
-  });
-
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      minAmount: '', maxAmount: '', purpose: '', 
-      paymentFrequency: '', minScore: '', search: ''
-    });
   };
 
   const formatCurrency = (amount) => {
@@ -100,30 +54,19 @@ export default function LoansPage() {
     }).format(amount);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('es-PY', {
-      year: 'numeric', month: 'short', day: 'numeric'
-    });
-  };
-
-  const purposes = [
-    'Negocio', 'Educación', 'Salud', 'Vivienda', 'Vehículo', 
-    'Consolidación de deudas', 'Emergencia', 'Otro'
-  ];
-
-  if (loading && loans.length === 0) {
+  if (authLoading || loading) {
     return (
       <AnimatedBackground particleCount={15}>
-      <div className="flex justify-center items-center min-h-screen">
+        <div className="flex justify-center items-center min-h-screen">
           <GlassCard className="text-center">
             <motion.div
               className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full mx-auto mb-4"
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             />
-            <p className="text-white/80 text-lg">Cargando préstamos...</p>
+            <p className="text-white/80 text-lg">Cargando...</p>
           </GlassCard>
-      </div>
+        </div>
       </AnimatedBackground>
     );
   }
@@ -133,35 +76,33 @@ export default function LoansPage() {
       <AppNavbar />
       <AnimatedBackground particleCount={20}>
         <div className="min-h-screen pt-20 px-4">
-    <div className="max-w-7xl mx-auto space-y-8">
-      {/* Header */}
+          <div className="max-w-7xl mx-auto space-y-8">
+            {/* Header */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="flex flex-col lg:flex-row lg:items-center lg:justify-between"
+              className="text-center"
             >
-              <div>
-                <motion.h1 
-                  className="text-4xl md:text-5xl font-bold text-white mb-2"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2, duration: 0.6 }}
-                >
-                  Mercado de Préstamos
-                </motion.h1>
-                <motion.p 
-                  className="text-white/70 text-lg"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3, duration: 0.6 }}
-                >
-                  Explora las oportunidades de financiamiento disponibles
-                </motion.p>
-              </div>
+              <motion.h1 
+                className="text-4xl md:text-6xl font-bold text-white mb-4"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.6 }}
+              >
+                Mercado de Préstamos
+              </motion.h1>
+              <motion.p 
+                className="text-white/70 text-xl max-w-3xl mx-auto"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+              >
+                Conectamos prestatarios con prestamistas de manera segura y transparente
+              </motion.p>
             </motion.div>
 
-            {/* Estadísticas */}
+            {/* Estadísticas Públicas */}
             {stats && (
               <motion.div
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
@@ -170,141 +111,175 @@ export default function LoansPage() {
                 transition={{ delay: 0.4, duration: 0.6 }}
               >
                 {[
-                  { label: 'Préstamos Totales', value: stats.total_loans, icon: FiDollarSign, gradient: 'from-green-500 to-emerald-600' },
-                  { label: 'Prestatarios Activos', value: stats.unique_borrowers, icon: FiUser, gradient: 'from-blue-500 to-cyan-600' },
-                  { label: 'Monto Total', value: formatCurrency(stats.total_amount), icon: FiTrendingUp, gradient: 'from-purple-500 to-pink-600' },
-                  { label: 'Préstamos Financiados', value: stats.funded_loans, icon: FiClock, gradient: 'from-orange-500 to-red-600' }
+                  { 
+                    label: 'Préstamos Totales', 
+                    value: stats.total_loans, 
+                    icon: FiDollarSign, 
+                    gradient: 'from-green-500 to-emerald-600',
+                    description: 'Solicitudes activas'
+                  },
+                  { 
+                    label: 'Prestatarios Activos', 
+                    value: stats.unique_borrowers, 
+                    icon: FiUser, 
+                    gradient: 'from-blue-500 to-cyan-600',
+                    description: 'Usuarios verificados'
+                  },
+                  { 
+                    label: 'Volumen Total', 
+                    value: formatCurrency(stats.total_amount), 
+                    icon: FiTrendingUp, 
+                    gradient: 'from-purple-500 to-pink-600',
+                    description: 'En solicitudes'
+                  },
+                  { 
+                    label: 'Préstamos Financiados', 
+                    value: stats.funded_loans, 
+                    icon: FiClock, 
+                    gradient: 'from-orange-500 to-red-600',
+                    description: 'Exitosamente'
+                  }
                 ].map((stat, index) => {
-                    const Icon = stat.icon;
-                    return (
-                        <GlassCard key={index} className="text-center">
-                            <motion.div
-                            className={`w-16 h-16 bg-gradient-to-r ${stat.gradient} rounded-3xl flex items-center justify-center mx-auto mb-4`}
-                            whileHover={{ scale: 1.1, rotate: 5 }}
-                            >
-                            <Icon className="w-8 h-8 text-white" />
-                            </motion.div>
-                            <p className="text-white text-2xl font-bold mb-1">{stat.value}</p>
-                            <p className="text-white/70 text-sm">{stat.label}</p>
-                        </GlassCard>
-                    );
+                  const Icon = stat.icon;
+                  return (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 50 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 + index * 0.1, duration: 0.6 }}
+                      whileHover={{ y: -5 }}
+                    >
+                      <GlassCard className="text-center h-full">
+                        <motion.div
+                          className={`w-16 h-16 bg-gradient-to-r ${stat.gradient} rounded-3xl flex items-center justify-center mx-auto mb-4`}
+                          whileHover={{ scale: 1.1, rotate: 5 }}
+                        >
+                          <Icon className="w-8 h-8 text-white" />
+                        </motion.div>
+                        <p className="text-white text-2xl font-bold mb-1">{stat.value}</p>
+                        <p className="text-white/70 text-sm font-medium">{stat.label}</p>
+                        <p className="text-white/50 text-xs mt-1">{stat.description}</p>
+                      </GlassCard>
+                    </motion.div>
+                  );
                 })}
               </motion.div>
             )}
 
-            {/* Filtros */}
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.6 }}>
-              <GlassCard>
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center space-x-3">
-                    <FiFilter className="w-6 h-6 text-white" />
-                    <h3 className="text-lg font-semibold text-white">Filtros de Búsqueda</h3>
+            {/* Sección de Acceso */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8, duration: 0.6 }}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+            >
+              {/* Para Prestatarios */}
+              <GlassCard className="text-center">
+                <motion.div
+                  className="w-20 h-20 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-3xl flex items-center justify-center mx-auto mb-6"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                >
+                  <FiUser className="w-10 h-10 text-white" />
+                </motion.div>
+                <h3 className="text-2xl font-bold text-white mb-4">¿Necesitas un Préstamo?</h3>
+                <p className="text-white/70 mb-6">
+                  Solicita financiamiento de manera rápida y segura. 
+                  Nuestro sistema de scoring te ayuda a obtener las mejores condiciones.
+                </p>
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center text-white/80">
+                    <FiShield className="w-4 h-4 mr-2 text-green-400" />
+                    <span>Evaluación con IA</span>
                   </div>
-                  <button onClick={() => setShowFilters(!showFilters)} className="text-white/70 hover:text-white">
-                    <FiChevronDown className={`w-6 h-6 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-                  </button>
+                  <div className="flex items-center text-white/80">
+                    <FiShield className="w-4 h-4 mr-2 text-green-400" />
+                    <span>Proceso 100% digital</span>
+                  </div>
+                  <div className="flex items-center text-white/80">
+                    <FiShield className="w-4 h-4 mr-2 text-green-400" />
+                    <span>Múltiples prestamistas</span>
+                  </div>
                 </div>
+                <Link href="/register">
+                  <motion.button
+                    className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center space-x-2"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <span>Solicitar Préstamo</span>
+                    <FiArrowRight className="w-4 h-4" />
+                  </motion.button>
+                </Link>
+              </GlassCard>
 
-                <AnimatePresence>
-                  {showFilters && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
+              {/* Para Prestamistas */}
+              <GlassCard className="text-center">
+                <motion.div
+                  className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-600 rounded-3xl flex items-center justify-center mx-auto mb-6"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                >
+                  <FiEye className="w-10 h-10 text-white" />
+                </motion.div>
+                <h3 className="text-2xl font-bold text-white mb-4">¿Quieres Invertir?</h3>
+                <p className="text-white/70 mb-6">
+                  Accede a leads calificados de prestatarios verificados. 
+                  Información detallada para tomar las mejores decisiones de inversión.
+                </p>
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center text-white/80">
+                    <FiLock className="w-4 h-4 mr-2 text-purple-400" />
+                    <span>Leads verificados</span>
+                  </div>
+                  <div className="flex items-center text-white/80">
+                    <FiLock className="w-4 h-4 mr-2 text-purple-400" />
+                    <span>Scoring completo</span>
+                  </div>
+                  <div className="flex items-center text-white/80">
+                    <FiLock className="w-4 h-4 mr-2 text-purple-400" />
+                    <span>CRM integrado</span>
+                  </div>
+                </div>
+                {user ? (
+                  <Link href="/leads">
+                    <motion.button
+                      className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center space-x-2"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
-                        {/* Search Input */}
-                        <div className="relative">
-                          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                          <input type="text" placeholder="Buscar..." value={filters.search} onChange={e => handleFilterChange('search', e.target.value)} className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50" />
-                        </div>
-                        <input type="number" placeholder="Monto Mín." value={filters.minAmount} onChange={e => handleFilterChange('minAmount', e.target.value)} className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50" />
-                        <input type="number" placeholder="Monto Máx." value={filters.maxAmount} onChange={e => handleFilterChange('maxAmount', e.target.value)} className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50" />
-                        <select value={filters.purpose} onChange={e => handleFilterChange('purpose', e.target.value)} className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white">
-                          <option value="" className="bg-slate-800">Propósito</option>
-                          {purposes.map(p => <option key={p} value={p} className="bg-slate-800">{p}</option>)}
-                        </select>
-                      </div>
-                      <div className="flex justify-end mt-4">
-                        <button onClick={clearFilters} className="text-sm text-white/60 hover:text-white flex items-center space-x-2"><FiX/><span>Limpiar Filtros</span></button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                      <span>Ver Leads</span>
+                      <FiArrowRight className="w-4 h-4" />
+                    </motion.button>
+                  </Link>
+                ) : (
+                  <Link href="/register">
+                    <motion.button
+                      className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center space-x-2"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <span>Registrarse como Prestamista</span>
+                      <FiArrowRight className="w-4 h-4" />
+                    </motion.button>
+                  </Link>
+                )}
               </GlassCard>
             </motion.div>
 
-            {/* Lista de Préstamos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <AnimatePresence>
-                {filteredLoans.map((loan, index) => (
-                  <motion.div
-                    key={loan.id}
-                    layout
-                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -50, scale: 0.9 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <GlassCard className="h-full flex flex-col justify-between">
-                      <div>
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <p className="text-white/70 text-sm">{loan.purpose}</p>
-                            <p className="text-2xl font-bold text-white">{formatCurrency(loan.amount)}</p>
-                          </div>
-                          <ScoreDisplay score={loan.borrower_score || 0} />
-                  </div>
-                        <p className="text-white/80 text-sm mb-4 h-16 overflow-hidden">
-                          {loan.description || 'Sin descripción detallada.'}
-                        </p>
-                        <div className="flex flex-wrap gap-4 text-sm text-white/70 mb-4">
-                           <span className="flex items-center gap-2"><FiCalendar /> {formatDate(loan.created_at)}</span>
-                           <span className="flex items-center gap-2"><FiClock /> {loan.term_months} meses</span>
-                           <span className="flex items-center gap-2"><FiMapPin /> {loan.borrower_profile?.user_city || 'N/A'}</span>
-                </div>
-              </div>
-                      <Link href={`/loans/${loan.id}`} passHref>
-                        <motion.a 
-                          className="block w-full text-center py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg"
-                          whileHover={{ scale: 1.05 }}
-                        >
-                          Ver Detalles
-                        </motion.a>
-                      </Link>
-                    </GlassCard>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-          </div>
-            
-            {filteredLoans.length === 0 && !loading && (
-              <GlassCard className="text-center py-12">
-                <p className="text-white/80 text-lg">No se encontraron préstamos con los filtros actuales.</p>
+            {/* Aviso de Seguridad */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.0, duration: 0.6 }}
+            >
+              <GlassCard className="text-center border border-yellow-500/30">
+                <FiShield className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">Información Protegida</h3>
+                <p className="text-white/70">
+                  Los datos detallados de préstamos y contactos están protegidos. 
+                  Solo los prestamistas registrados con créditos activos pueden acceder a esta información.
+                </p>
               </GlassCard>
-            )}
-
-          {/* Paginación */}
-          {totalPages > 1 && (
-              <div className="flex justify-center items-center space-x-4">
-              <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                  className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white disabled:opacity-50"
-              >
-                Anterior
-              </button>
-                <span className="text-white/80">Página {currentPage} de {totalPages}</span>
-              <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                  className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white disabled:opacity-50"
-              >
-                Siguiente
-              </button>
-            </div>
-          )}
+            </motion.div>
           </div>
         </div>
       </AnimatedBackground>

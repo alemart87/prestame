@@ -68,7 +68,10 @@ export const lenderService = {
     return api.get(`/lenders/leads?${params}`);
   },
   getLead: (id) => api.get(`/lenders/leads/${id}`),
-  purchaseLead: (loanRequestId) => api.post('/lenders/leads/purchase', { loan_request_id: loanRequestId }),
+  purchaseLead: async (loanRequestId) => {
+    const response = await api.post('/lenders/leads/purchase', { loan_request_id: loanRequestId });
+    return response.data;
+  },
   contactLead: (id) => api.post(`/lenders/leads/${id}/contact`),
   getPackages: () => api.get('/lenders/packages'),
   purchasePackage: (packageType) => api.post('/lenders/packages/purchase', { package_type: packageType }),
@@ -83,13 +86,112 @@ export const lenderService = {
   getMyLeads: (filters = {}) => {
     const params = new URLSearchParams(filters).toString();
     return api.get(`/lenders/my-leads?${params}`);
+  },
+  async getLeads() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/lender/leads`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error obteniendo leads');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  },
+  async purchaseLead(leadId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/lender/purchase-lead`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ lead_id: leadId })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al comprar el lead');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error purchasing lead:', error);
+      throw error;
+    }
+  },
+  async getProfile() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/lender/profile`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener el perfil');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting profile:', error);
+      throw error;
+    }
+  },
+  async getPurchasedLeads() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/lender/purchased-leads`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener leads comprados');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting purchased leads:', error);
+      throw error;
+    }
   }
 };
 
-export const getLeadsForLender = async (filters = {}) => {
-    const params = new URLSearchParams(filters).toString();
-    const response = await api.get(`/lenders/leads?${params}`);
-    return response.data.leads;
+export const getLeadsForLender = async (filterParams = {}) => {
+  try {
+    const queryParams = new URLSearchParams(filterParams).toString();
+    const url = `${API_BASE_URL}/lender/leads${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Error obteniendo leads');
+    }
+
+    const data = await response.json();
+    return data.leads || [];
+  } catch (error) {
+    console.error('Error:', error);
+    throw error;
+  }
 };
 
 // Servicios para préstamos públicos
@@ -107,8 +209,49 @@ export const loanService = {
 export const stripeService = {
   createCheckoutSession: (priceId) => api.post('/stripe/create-checkout-session', { priceId }),
   createOneTimeCheckout: (priceId) => api.post('/stripe/create-one-time-checkout', { priceId }),
-  verifyCheckoutSession: (sessionId) => api.post('/stripe/verify-checkout-session', { session_id: sessionId }),
   createPortalSession: () => api.post('/stripe/create-portal-session'),
+  verifyCheckoutSession: (sessionId) => api.post('/stripe/verify-checkout-session', { session_id: sessionId }),
+  
+  // NUEVOS MÉTODOS PARA EL SISTEMA SIMPLIFICADO
+  async createLeadsCheckout(quantity) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/stripe/create-leads-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ quantity })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al crear checkout');
+      }
+
+      return { data: await response.json() };
+    } catch (error) {
+      console.error('Error creating leads checkout:', error);
+      throw error;
+    }
+  },
+
+  async getLeadPricing() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/stripe/get-lead-pricing`, {
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener precios');
+      }
+
+      return { data: await response.json() };
+    } catch (error) {
+      console.error('Error getting lead pricing:', error);
+      throw error;
+    }
+  }
 };
 
 export const verifyCheckoutSession = async (sessionId) => {

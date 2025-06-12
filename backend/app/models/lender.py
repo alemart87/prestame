@@ -15,7 +15,7 @@ class LenderProfile(db.Model):
     risk_tolerance = db.Column(db.String(20))  # low, medium, high
     
     # Información de paquetes
-    current_package = db.Column(db.String(20), default='basic')  # basic, premium, gold
+    current_package = db.Column(db.String(100), nullable=True)
     leads_purchased = db.Column(db.Integer, default=0)
     leads_remaining = db.Column(db.Integer, default=0)
     package_expires_at = db.Column(db.DateTime)
@@ -27,15 +27,15 @@ class LenderProfile(db.Model):
     
     # Nuevos campos para Stripe y Leads
     lead_credits = db.Column(db.Integer, default=0, nullable=False)
-    stripe_subscription_id = db.Column(db.String(255), nullable=True, unique=True)
-    subscription_status = db.Column(db.String(50), default='inactive', nullable=False) # ej: inactive, active, canceled
-    ai_search_credits = db.Column(db.Integer, default=3, nullable=False) # Nuevos créditos de búsqueda
+    stripe_subscription_id = db.Column(db.String(255), nullable=True)
+    subscription_status = db.Column(db.String(50), nullable=True)
+    ai_search_credits = db.Column(db.Integer, default=0, nullable=False)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relaciones
-    leads = db.relationship('Lead', backref='lender', lazy=True)
+    # Relación con los leads comprados
+    purchased_leads = db.relationship('LenderLead', backref='lender', lazy='dynamic', cascade='all, delete-orphan')
     
     def __repr__(self):
         return f'<LenderProfile {self.user_id}>'

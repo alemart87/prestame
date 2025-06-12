@@ -46,7 +46,10 @@ import {
   FiX,
   FiCreditCard,
   FiUser,
-  FiBrain
+  FiCpu,
+  FiDollarSign,
+  FiLock,
+  FiUnlock
 } from 'react-icons/fi';
 import AnimatedBackground from '../../../components/AnimatedBackground';
 import GlassCard from '../../../components/GlassCard';
@@ -95,8 +98,20 @@ const LEAD_STATUSES = {
   }
 };
 
+// AGREGAR ESTA FUNCIÓN aquí, después de los imports
+const formatCurrency = (amount) => {
+  if (!amount) return 'Gs. 0';
+  
+  return new Intl.NumberFormat('es-PY', {
+    style: 'currency',
+    currency: 'PYG',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount);
+};
+
 const LeadsPage = () => {
-    const { user, profile, loading: userLoading } = useAuth();
+    const { user, profile, loading: userLoading, refreshProfile } = useAuth();
     const [leads, setLeads] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState(null);
@@ -106,6 +121,7 @@ const LeadsPage = () => {
     const [viewMode, setViewMode] = useState('grid'); // 'grid' o 'list'
     const [selectedLead, setSelectedLead] = useState(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [purchasingId, setPurchasingId] = useState(null);
     const [filters, setFilters] = useState({
         status: 'all',
         dateRange: 'all',
@@ -116,6 +132,14 @@ const LeadsPage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const commentRef = useRef(null);
     const router = useRouter();
+    const [loadingLeads, setLoadingLeads] = useState({}); // Asegúrate de que esté aquí
+    const [dataSource, setDataSource] = useState('all'); // Nuevo estado para filtrar origen
+
+    // Agrega esto después de los estados para verificar
+    useEffect(() => {
+      console.log('loadingLeads state:', loadingLeads);
+      console.log('leads:', leads);
+    }, [loadingLeads, leads]);
 
     // Función para cargar leads
     const fetchLeads = async (showToast = false) => {
@@ -123,6 +147,7 @@ const LeadsPage = () => {
         
         if (user?.user_type !== 'lender') {
             console.log("❌ Usuario no es prestamista");
+            setIsLoading(false); // Detener carga si no es prestamista
             return;
         }
         
@@ -155,7 +180,7 @@ const LeadsPage = () => {
                 fetchLeads();
                 // Toast de bienvenida solo la primera vez
                 setTimeout(() => {
-                toast.success('✅ CRM de Leads cargado. Gestiona tus contactos eficientemente.', {
+                toast.info('Gestiona y adquiere nuevos leads para invertir.', {
                         autoClose: 4000
                     });
                 }, 1000);
@@ -185,6 +210,54 @@ const LeadsPage = () => {
     const closeLeadDetail = () => {
         setIsDetailOpen(false);
         setSelectedLead(null);
+    };
+
+    const handlePurchaseLead = async (leadId) => {
+        try {
+            console.log('Intentando comprar lead:', leadId);
+            
+            setLoadingLeads(prev => ({ ...prev, [leadId]: true }));
+            
+            // VERIFICAR CRÉDITOS PRIMERO
+            if (!profile || profile.lead_credits <= 0) {
+                toast.error('No tienes créditos suficientes. Te redirigimos a la página de suscripciones.');
+                setTimeout(() => {
+                    router.push('/subscriptions');
+                }, 2000);
+                return;
+            }
+            
+            // INTENTAR COMPRAR EL LEAD
+            const response = await lenderService.purchaseLead(leadId);
+            
+            if (response.success) {
+                toast.success('¡Lead desbloqueado exitosamente!');
+                
+                // Actualizar la lista de leads
+                await fetchLeads();
+                
+                // Actualizar el perfil para mostrar créditos actualizados
+                await refreshProfile();
+                
+            } else {
+                toast.error(response.message || 'Error al desbloquear el lead');
+            }
+            
+        } catch (error) {
+            console.error('Error purchasing lead:', error);
+            
+            if (error.message?.includes('insufficient credits') || 
+                error.message?.includes('créditos insuficientes')) {
+                toast.error('No tienes créditos suficientes. Te redirigimos a la página de suscripciones.');
+                setTimeout(() => {
+                    router.push('/subscriptions');
+                }, 2000);
+            } else {
+                toast.error('Error al desbloquear el lead. Inténtalo de nuevo.');
+            }
+        } finally {
+            setLoadingLeads(prev => ({ ...prev, [leadId]: false }));
+        }
     };
 
     // Función para actualizar estado de lead
@@ -354,7 +427,8 @@ const LeadsPage = () => {
         // Filtro por fuente (AI o reales)
         const matchesSource = filters.source === 'all' || 
             (filters.source === 'ai' && lead.contact?.ai_generated) ||
-            (filters.source === 'real' && lead.contact?.real_data);
+            (filters.source === 'real' && lead.contact?.real_data) ||
+            (filters.source === 'purchased' && lead.is_purchased);
             
         return matchesSearch && matchesCategory && matchesStatus && matchesFollowUpToday && matchesSource;
     });
@@ -440,6 +514,9 @@ const LeadsPage = () => {
                                 getComments={getComments}
                                 getFollowUpDate={getFollowUpDate}
                                 commentRef={commentRef}
+                                handlePurchaseLead={handlePurchaseLead}
+                                purchasingId={purchasingId}
+                                profile={profile}
                             />
                         )}
                     </AnimatePresence>
@@ -559,7 +636,7 @@ const LeadsPage = () => {
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5, duration: 0.6 }}
-                            className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"
+                            className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4"
                         >
                             {[
                                 { 
@@ -603,6 +680,13 @@ const LeadsPage = () => {
                                     icon: FiXCircle, 
                                     gradient: 'from-red-500 to-pink-600',
                                     description: 'Rechazados'
+                                },
+                                { 
+                                    label: 'Créditos', 
+                                    value: profile?.lead_credits || 0, 
+                                    icon: FiCreditCard, 
+                                    gradient: 'from-teal-500 to-cyan-600',
+                                    description: 'Para comprar leads'
                                 }
                             ].map((stat, index) => {
                                 const Icon = stat.icon;
@@ -612,7 +696,7 @@ const LeadsPage = () => {
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.6 + index * 0.1, duration: 0.6 }}
-                                        onClick={() => {
+                                        onClick={stat.label === 'Créditos' ? () => router.push('/subscriptions') : () => {
                                             if (stat.label === 'Nuevos') 
                                                 setFilters(prev => ({...prev, status: 'new'}));
                                             else if (stat.label === 'Pendientes') 
@@ -628,13 +712,14 @@ const LeadsPage = () => {
                                         }}
                                         className="cursor-pointer"
                                     >
-                                        <GlassCard className={`text-center ${filters.status === (
+                                        <GlassCard className={`text-center ${
                                             stat.label === 'Nuevos' ? 'new' :
                                             stat.label === 'Pendientes' ? 'pending' :
                                             stat.label === 'Aptos' ? 'suitable' :
                                             stat.label === 'No Aptos' ? 'not_suitable' :
-                                            stat.label === 'Seguimientos' && filters.dateRange === 'today' ? 'follow_up' : ''
-                                        ) ? 'border-2 border-white' : ''}`}>
+                                            stat.label === 'Seguimientos' && filters.dateRange === 'today' ? 'follow_up' :
+                                            stat.label === 'Créditos' ? 'credits' : ''
+                                        }`}>
                                             <motion.div
                                                 className={`w-12 h-12 bg-gradient-to-r ${stat.gradient} rounded-2xl flex items-center justify-center mx-auto mb-3`}
                                                 whileHover={{ scale: 1.1, rotate: 5 }}
@@ -740,6 +825,7 @@ const LeadsPage = () => {
                                             <option value="all" className="bg-slate-800">Todos los orígenes</option>
                                             <option value="real" className="bg-slate-800">Datos reales</option>
                                             <option value="ai" className="bg-slate-800">Generados por IA</option>
+                                            <option value="purchased" className="bg-slate-800">Leads Adquiridos</option>
                                         </motion.select>
                                     </div>
                                 </div>
@@ -925,62 +1011,148 @@ const LeadsPage = () => {
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Información principal */}
+                                                                {/* Información principal - SIEMPRE VISIBLE */}
                                                                 <div className="mt-2 space-y-4">
                                                                     <div className="flex items-center space-x-3">
                                                                         <motion.div
-                                                                            className={`w-12 h-12 rounded-2xl flex items-center justify-center
-                                                                                ${lead.status === 'new' ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 
-                                                                                lead.status === 'pending' ? 'bg-gradient-to-r from-orange-500 to-amber-600' :
-                                                                                lead.status === 'suitable' ? 'bg-gradient-to-r from-green-500 to-emerald-600' :
-                                                                                lead.status === 'not_suitable' ? 'bg-gradient-to-r from-red-500 to-pink-600' :
-                                                                                lead.status === 'follow_up' ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 
-                                                                                'bg-gradient-to-r from-gray-500 to-gray-600'}`
-                                                                            }
+                                                                            className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center"
                                                                             whileHover={{ scale: 1.1, rotate: 5 }}
                                                                         >
-                                                                            {lead.status && LEAD_STATUSES[lead.status] && (() => {
-                                                                                const Icon = LEAD_STATUSES[lead.status].icon;
-                                                                                return <Icon className="w-6 h-6 text-white" />;
-                                                                            })()}
+                                                                            <FiDollarSign className="w-6 h-6 text-white" />
                                                                         </motion.div>
                                                                         <div className="flex-1">
                                                                             <h3 className="text-white font-semibold text-lg">
-                                                                                {lead.contact?.company_name || lead.contact?.full_name || 'Lead sin nombre'}
+                                                                                {formatCurrency(lead.amount)}
                                                                             </h3>
-                                                                            {lead.contact?.category && (
-                                                                                <p className="text-white/60 text-sm capitalize">
-                                                                                    {lead.contact.category.replace('_', ' ')}
-                        </p>
-                    )}
+                                                                            <p className="text-white/60 text-sm">{lead.purpose}</p>
+                                                                        </div>
+                                                                        {/* Score siempre visible */}
+                                                                        <div className="text-right">
+                                                                            <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                                                                lead.borrower_profile?.score >= 80 ? 'bg-green-500/20 text-green-300' :
+                                                                                lead.borrower_profile?.score >= 60 ? 'bg-blue-500/20 text-blue-300' :
+                                                                                lead.borrower_profile?.score >= 40 ? 'bg-yellow-500/20 text-yellow-300' :
+                                                                                'bg-red-500/20 text-red-300'
+                                                                            }`}>
+                                                                                Score: {lead.borrower_profile?.score || 'N/A'}
+                                                                            </div>
                 </div>
             </div>
 
-                                                                    <div className="space-y-3">
-                                                                        {/* Email */}
-                                                                        {lead.contact?.email && (
-                                                                            <div className="flex items-center space-x-3">
-                                                                                <FiMail className="w-4 h-4 text-blue-400" />
-                                                                                <span className="text-white/80 text-sm">{lead.contact.email}</span>
+                                                                    {/* Información básica - SIEMPRE VISIBLE */}
+                                                                    <div className="space-y-3 bg-white/5 p-4 rounded-xl">
+                                                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                                                            <div>
+                                                                                <p className="text-white/50">Plazo</p>
+                                                                                <p className="text-white font-medium">{lead.term_months} meses</p>
                                                                             </div>
-                                                                        )}
-                                                                        
-                                                                        {/* Teléfono */}
-                                                                        {lead.contact?.phone && (
-                                                                            <div className="flex items-center space-x-3">
-                                                                                <FiPhone className="w-4 h-4 text-green-400" />
-                                                                                <span className="text-white/80 text-sm">{lead.contact.phone}</span>
+                                                                            <div>
+                                                                                <p className="text-white/50">Frecuencia</p>
+                                                                                <p className="text-white font-medium capitalize">{lead.payment_frequency}</p>
                                                                             </div>
-                                                                        )}
+                                                                            <div>
+                                                                                <p className="text-white/50">Ubicación</p>
+                                                                                <p className="text-white font-medium">{lead.location?.city || 'N/A'}</p>
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="text-white/50">Empleo</p>
+                                                                                <p className="text-white font-medium">{lead.borrower_profile?.employment_status || 'N/A'}</p>
+                                                                            </div>
+                                                                        </div>
                                                                         
-                                                                        {/* Ubicación */}
-                                                                        {lead.contact?.city && (
-                                                                            <div className="flex items-center space-x-3">
-                                                                                <FiMapPin className="w-4 h-4 text-purple-400" />
-                                                                                <span className="text-white/80 text-sm">{lead.contact.city}</span>
+                                                                        {/* Ratio deuda/ingreso si está disponible */}
+                                                                        {lead.borrower_profile?.debt_to_income_ratio && (
+                                                                            <div className="pt-2 border-t border-white/10">
+                                                                                <p className="text-white/50 text-xs">Ratio Deuda/Ingreso</p>
+                                                                                <div className="flex items-center space-x-2">
+                                                                                    <div className="flex-1 bg-white/10 rounded-full h-2">
+                                                                                        <div 
+                                                                                            className={`h-2 rounded-full ${
+                                                                                                lead.borrower_profile.debt_to_income_ratio <= 0.3 ? 'bg-green-500' :
+                                                                                                lead.borrower_profile.debt_to_income_ratio <= 0.5 ? 'bg-yellow-500' :
+                                                                                                'bg-red-500'
+                                                                                            }`}
+                                                                                            style={{ width: `${Math.min(lead.borrower_profile.debt_to_income_ratio * 100, 100)}%` }}
+                                                                                        />
+                                                                                    </div>
+                                                                                    <span className="text-white text-xs font-medium">
+                                                                                        {(lead.borrower_profile.debt_to_income_ratio * 100).toFixed(1)}%
+                                                                                    </span>
+                                                                                </div>
                                                                             </div>
                                                                         )}
                                                                     </div>
+
+                                                                    {/* Información de Contacto o Botón de Compra */}
+                                                                    {lead.is_purchased ? (
+                                                                        <div className="mt-4 space-y-3 bg-gradient-to-r from-green-500/20 to-emerald-500/20 p-4 rounded-xl border border-green-500/30">
+                                                                            <h4 className="font-semibold text-green-300 flex items-center">
+                                                                                <FiCheckCircle className="mr-2"/> Contacto Desbloqueado
+                                                                            </h4>
+                                                                            <div className="space-y-2">
+                                                                                <div className="flex items-center space-x-3">
+                                                                                    <FiUser className="w-4 h-4 text-green-400" />
+                                                                                    <span className="text-white/90 text-sm">{lead.contact?.full_name}</span>
+                                                                                </div>
+                                                                                <div className="flex items-center space-x-3">
+                                                                                    <FiMail className="w-4 h-4 text-green-400" />
+                                                                                    <a href={`mailto:${lead.contact?.email}`} className="text-green-300 hover:text-green-200 text-sm">
+                                                                                        {lead.contact?.email}
+                                                                                    </a>
+                                                                                </div>
+                                                                            <div className="flex items-center space-x-3">
+                                                                                <FiPhone className="w-4 h-4 text-green-400" />
+                                                                                    <a href={`tel:${lead.contact?.phone}`} className="text-green-300 hover:text-green-200 text-sm">
+                                                                                        {lead.contact?.phone}
+                                                                                    </a>
+                                                                            </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="mt-4 space-y-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-4 rounded-xl border border-purple-500/30">
+                                                                            <h4 className="font-semibold text-purple-300 flex items-center">
+                                                                                <FiLock className="mr-2"/> Información de Contacto
+                                                                            </h4>
+                                                                            <div className="space-y-2 text-white/60">
+                                                                            <div className="flex items-center space-x-3">
+                                                                                    <FiUser className="w-4 h-4" />
+                                                                                    <span className="text-sm">████████ ████████</span>
+                                                                            </div>
+                                                                                <div className="flex items-center space-x-3">
+                                                                                    <FiMail className="w-4 h-4" />
+                                                                                    <span className="text-sm">████████@████.com</span>
+                                                                                </div>
+                                                                                <div className="flex items-center space-x-3">
+                                                                                    <FiPhone className="w-4 h-4" />
+                                                                                    <span className="text-sm">+595 ███ ███ ███</span>
+                                                                                </div>
+                                                                            </div>
+                                                                            
+                                                                            <motion.button
+                                                                                onClick={() => handlePurchaseLead(lead.id)}
+                                                                                disabled={loadingLeads[lead.id] || false} // Asegurar que no sea undefined
+                                                                                className={`
+                                                                                  px-4 py-2 rounded-lg font-medium transition-all duration-200
+                                                                                  ${loadingLeads[lead.id] 
+                                                                                    ? 'bg-gray-500 text-white cursor-not-allowed opacity-50' 
+                                                                                    : 'bg-green-500 hover:bg-green-600 text-white cursor-pointer'
+                                                                                  }
+                                                                                `}
+                                                                            >
+                                                                                {loadingLeads[lead.id] ? (
+                                                                                    <>
+                                                                                        <FiRefreshCw className="w-4 h-4 animate-spin inline mr-2" />
+                                                                                        Procesando...
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <>
+                                                                                        <FiUnlock className="w-4 h-4 inline mr-2" />
+                                                                                        Desbloquear
+                                                                                    </>
+                                                                                )}
+                                                                            </motion.button>
+                                                                    </div>
+                                                                    )}
 
                                                                     {/* Seguimiento */}
                                                                     {isFollowUpToday(lead) && (
@@ -1041,7 +1213,7 @@ const LeadsPage = () => {
                                                                         <div className="mt-3 p-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30">
                                                                             <div className="flex items-center justify-between">
                                                                                 <div className="flex items-center space-x-2">
-                                                                                    <FiBrain className="w-4 h-4 text-purple-300" />
+                                                                                    <FiCpu className="w-4 h-4 text-purple-300" />
                                                                                     <span className="text-purple-300 text-sm font-medium">Score Final IA</span>
                                                                                 </div>
                                                                                 <div className="text-right">
@@ -1054,7 +1226,7 @@ const LeadsPage = () => {
                                                                                     </p>
                                                                                 </div>
                                                                             </div>
-                                                                        </div>
+                    </div>
                                                                     )}
 
                                                                     {/* Botón de gestión */}
@@ -1140,20 +1312,20 @@ const LeadsPage = () => {
 
                                                                     {/* Contacto */}
                                                                     <td className="px-4 py-3">
+                                                                        {lead.is_purchased ? (
                                                                         <div className="space-y-1">
-                                                                            {lead.contact?.email && (
                                                                                 <p className="text-white/80 text-sm flex items-center">
-                                                                                    <FiMail className="w-3 h-3 text-blue-400 mr-1" />
-                                                                                    {lead.contact.email}
+                                                                                    <FiMail className="w-3 h-3 text-green-400 mr-2" />
+                                                                                    {lead.contact?.email}
                                                                                 </p>
-                                                                            )}
-                                                                            {lead.contact?.phone && (
                                                                                 <p className="text-white/80 text-sm flex items-center">
-                                                                                    <FiPhone className="w-3 h-3 text-green-400 mr-1" />
-                                                                                    {lead.contact.phone}
+                                                                                    <FiPhone className="w-3 h-3 text-green-400 mr-2" />
+                                                                                    {lead.contact?.phone}
                                                                                 </p>
-                                                                            )}
                                                 </div>
+                                                                        ) : (
+                                                                            <span className="text-white/40 italic">Bloqueado</span>
+                                                                        )}
                                             </td>
 
                                                                     {/* Monto */}
@@ -1191,6 +1363,7 @@ const LeadsPage = () => {
 
                                                                     {/* Acciones */}
                                                                     <td className="px-4 py-3">
+                                                                        {lead.is_purchased ? (
                                                                         <div className="flex items-center space-x-2">
                                                                             <button 
                                                                                 className="p-1.5 bg-white/10 hover:bg-white/20 rounded text-white transition-colors"
@@ -1201,7 +1374,6 @@ const LeadsPage = () => {
                                                                             >
                                                                                 <FiEye className="w-4 h-4" />
                                                                             </button>
-                                                                            
                                                                             {lead.contact?.email && (
                                                                                 <a 
                                                                                     href={`mailto:${lead.contact.email}`}
@@ -1211,7 +1383,6 @@ const LeadsPage = () => {
                                                                                     <FiMail className="w-4 h-4" />
                                                                                 </a>
                                                                             )}
-                                                                            
                                                                             {lead.contact?.phone && (
                                                                                 <a 
                                                                                     href={`tel:${lead.contact.phone}`}
@@ -1222,6 +1393,31 @@ const LeadsPage = () => {
                                                                                 </a>
                                                                             )}
                                                 </div>
+                                                                        ) : (
+                                                                            <motion.button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    handlePurchaseLead(lead.id);
+                                                                                }}
+                                                                                disabled={loadingLeads[lead.id] || false} // Asegurar que no sea undefined
+                                                                                className="px-3 py-1.5 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                                whileHover={{ scale: 1.05 }}
+                                                                                whileTap={{ scale: 0.95 }}
+                                                                            >
+                                                                                {loadingLeads[lead.id] ? (
+                                                                                    <motion.div
+                                                                                        className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                                                                                        animate={{ rotate: 360 }}
+                                                                                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                                                                    />
+                                                                                ) : (
+                                                                                    <>
+                                                                                        <FiCreditCard className="w-3 h-3" />
+                                                                                        <span>Desbloquear</span>
+                                                                                    </>
+                                                                                )}
+                                                                            </motion.button>
+                                                                        )}
                                             </td>
                                                                 </motion.tr>
                                                             ))}
@@ -1254,7 +1450,10 @@ const LeadDetailModal = ({
     isSubmitting,
     getComments,
     getFollowUpDate,
-    commentRef
+    commentRef,
+    handlePurchaseLead,
+    purchasingId,
+    profile
 }) => {
     return (
         <motion.div 
@@ -1323,79 +1522,60 @@ const LeadDetailModal = ({
                                 <h3 className="text-white font-semibold mb-4 flex items-center">
                                     <FiUser className="mr-2" /> Información de contacto
                                 </h3>
-                                <div className="space-y-3 bg-white/5 p-4 rounded-xl">
-                                    {lead.contact?.company_name && (
-                                        <div className="flex items-start space-x-3">
-                                            <FiBuilding className="w-4 h-4 text-blue-400 mt-1" />
-                                            <div>
-                                                <p className="text-white/70 text-xs">Empresa</p>
-                                                <p className="text-white">{lead.contact.company_name}</p>
-                    </div>
-                </div>
-            )}
-
-                                    {lead.contact?.full_name && (
+                                {lead.is_purchased ? (
+                                    <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-green-500/30">
                                         <div className="flex items-start space-x-3">
                                             <FiUser className="w-4 h-4 text-green-400 mt-1" />
                                             <div>
-                                                <p className="text-white/70 text-xs">Nombre</p>
-                                                <p className="text-white">{lead.contact.full_name}</p>
+                                                <p className="text-white/70 text-xs">Nombre Completo</p>
+                                                <p className="text-white">{lead.contact?.full_name}</p>
                                             </div>
                                         </div>
-                                    )}
-                                    
-                                    {(lead.contact?.email || lead.contact?.phone) && (
                                         <div className="flex items-start space-x-3">
-                                            <FiMail className="w-4 h-4 text-purple-400 mt-1" />
+                                            <FiMail className="w-4 h-4 text-green-400 mt-1" />
                                             <div>
-                                                <p className="text-white/70 text-xs">Contacto</p>
-                                                {lead.contact?.email && (
-                                                    <p className="text-white">Email: {lead.contact.email}</p>
-                                                )}
-                                                {lead.contact?.phone && (
-                                                    <p className="text-white">Teléfono: {lead.contact.phone}</p>
-                                                )}
+                                                <p className="text-white/70 text-xs">Email</p>
+                                                <p className="text-white">{lead.contact?.email}</p>
                                             </div>
                                         </div>
-                                    )}
-                                    
-                                    {(lead.contact?.city || lead.contact?.country) && (
                                         <div className="flex items-start space-x-3">
-                                            <FiMapPin className="w-4 h-4 text-red-400 mt-1" />
+                                            <FiPhone className="w-4 h-4 text-green-400 mt-1" />
                                             <div>
-                                                <p className="text-white/70 text-xs">Ubicación</p>
-                                                <p className="text-white">
-                                                    {[lead.contact?.city, lead.contact?.country]
-                                                        .filter(Boolean).join(', ')}
-                                                </p>
+                                                <p className="text-white/70 text-xs">Teléfono</p>
+                                                <p className="text-white">{lead.contact?.phone}</p>
                                             </div>
                                         </div>
-                                    )}
-                                    
-                                    {lead.contact?.category && (
-                                        <div className="flex items-start space-x-3">
-                                            <FiTarget className="w-4 h-4 text-amber-400 mt-1" />
-                                            <div>
-                                                <p className="text-white/70 text-xs">Categoría</p>
-                                                <p className="text-white capitalize">
-                                                    {lead.contact.category.replace('_', ' ')}
-                                                </p>
                                             </div>
+                                ) : (
+                                    <div className="space-y-4 bg-white/5 p-6 rounded-xl text-center border border-purple-500/30">
+                                        <FiShield className="w-10 h-10 text-purple-400 mx-auto mb-2" />
+                                        <h4 className="text-lg font-semibold text-white">Información de Contacto Protegida</h4>
+                                        <p className="text-white/70">Desbloquea este lead para ver el nombre, email y teléfono del solicitante.</p>
+                                        <motion.button
+                                            onClick={() => handlePurchaseLead(lead.id)}
+                                            disabled={purchasingId === lead.id || (profile?.lead_credits || 0) < 1}
+                                            className="w-full mt-2 px-4 py-3 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center space-x-2"
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                        >
+                                            {purchasingId === lead.id ? (
+                                                <motion.div
+                                                    className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                                                    animate={{ rotate: 360 }}
+                                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                                />
+                                            ) : (
+                                                <>
+                                                    <FiCreditCard className="w-5 h-5" />
+                                                    <span>Desbloquear Contacto (1 crédito)</span>
+                                                </>
+                                            )}
+                                        </motion.button>
+                                        <p className="text-center text-xs text-white/60">
+                                            Créditos disponibles: {profile?.lead_credits || 0}
+                                        </p>
                                         </div>
                                     )}
-                                    
-                                    {(lead.contact?.real_data || lead.contact?.ai_generated) && (
-                                        <div className="flex items-start space-x-3">
-                                            <FiShield className="w-4 h-4 text-cyan-400 mt-1" />
-                                            <div>
-                                                <p className="text-white/70 text-xs">Origen</p>
-                                                <p className="text-white">
-                                                    {lead.contact?.real_data ? 'Datos reales verificados' : 'Generado por IA'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
                             </div>
                             
                             {/* Información del préstamo */}
@@ -1411,13 +1591,13 @@ const LeadDetailModal = ({
                                                 <p className="text-white text-lg font-semibold">
                                                     Gs. {lead.loan_request.amount?.toLocaleString()}
                                                 </p>
-                </div>
+                            </div>
                                             <div>
                                                 <p className="text-white/70 text-xs">Plazo</p>
                                                 <p className="text-white">
                                                     {lead.loan_request.term_months} meses
                                                 </p>
-            </div>
+                        </div>
                                             <div>
                                                 <p className="text-white/70 text-xs">Frecuencia</p>
                                                 <p className="text-white capitalize">

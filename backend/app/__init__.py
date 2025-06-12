@@ -56,6 +56,7 @@ def create_app(config_class=Config):
     from app.routes.scraper_routes import scraper_bp
     from app.routes.admin import admin_bp
     from app.routes.health import health_bp
+    from app.routes.lender import lender_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(lenders_bp, url_prefix='/api/lenders')
@@ -66,6 +67,7 @@ def create_app(config_class=Config):
     app.register_blueprint(scraper_bp, url_prefix='/api/scraper')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(health_bp)
+    app.register_blueprint(lender_bp, url_prefix='/api/lender')
     
     # Registrar comandos CLI
     from . import commands

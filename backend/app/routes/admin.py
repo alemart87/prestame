@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, request
 from functools import wraps
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from app.models import User, LoanRequest, Lead, LenderProfile, BorrowerProfile
+from app.models import User, LoanRequest, LenderProfile, BorrowerProfile
+from app.schemas import UserSchema, LoanRequestSchema, LenderProfileSchema, BorrowerProfileSchema
 from app import db
 import random
 from app.utils.stripe_utils import sync_stripe_products_and_prices

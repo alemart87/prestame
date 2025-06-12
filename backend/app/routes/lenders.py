@@ -1,10 +1,10 @@
 import json
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from app.models import User, LenderProfile, Lead, LoanRequest, BorrowerProfile
+from app.models import User, LenderProfile, LoanRequest, BorrowerProfile, LenderLead
 from app.schemas import LenderProfileSchema, LeadSchema, LoanRequestSchema
 from app import db
-from app.models.lead import Lead
+from sqlalchemy.orm import joinedload
 from datetime import datetime
 
 lenders_bp = Blueprint('lenders', __name__)
@@ -41,7 +41,7 @@ def get_leads():
         max_amount = request.args.get('max_amount', 0, type=float)
         
         # Buscar leads por lender_id (que es lender_profile.id)
-        query = Lead.query.filter_by(lender_id=lender_profile.id)
+        query = LenderLead.query.filter_by(lender_id=lender_profile.id)
         
         if status != 'all':
             query = query.filter_by(status=status)
@@ -101,7 +101,7 @@ def get_lead(lead_id):
             return jsonify({'error': 'Perfil de prestamista no encontrado'}), 404
         
         # Buscar lead por lender_id
-        lead = Lead.query.filter_by(id=lead_id, lender_id=lender_profile.id).first()
+        lead = LenderLead.query.filter_by(id=lead_id, lender_id=lender_profile.id).first()
         if not lead:
             return jsonify({'error': 'Lead no encontrado'}), 404
         
@@ -164,7 +164,7 @@ def contact_lead(lead_id):
         return jsonify({'error': 'Perfil de prestamista no encontrado'}), 404
     
     # CORREGIDO: Buscar lead por lender_id (user_id) en lugar de lender_profile_id
-    lead = Lead.query.filter_by(id=lead_id, lender_id=user_id).first()
+    lead = LenderLead.query.filter_by(id=lead_id, lender_id=user_id).first()
     if not lead:
         return jsonify({'error': 'Lead no encontrado'}), 404
     
@@ -303,7 +303,7 @@ def purchase_lead():
         return jsonify({'error': 'Esta solicitud de préstamo ya no está disponible'}), 400
     
     # CORREGIDO: Verificar si ya compró este lead usando lender_id
-    existing_lead = Lead.query.filter_by(
+    existing_lead = LenderLead.query.filter_by(
         lender_id=user_id,
         loan_request_id=loan_request_id
     ).first()
@@ -312,7 +312,7 @@ def purchase_lead():
         return jsonify({'error': 'Ya has comprado este lead'}), 400
     
     # CORREGIDO: Crear el lead usando lender_id
-    lead = Lead(
+    lead = LenderLead(
         lender_id=user_id,
         loan_request_id=loan_request_id,
         status='purchased'
@@ -385,14 +385,14 @@ def assign_leads_to_lender(lender_profile):
     leads_assigned = 0
     for loan_request in available_requests:
         # Verificar si ya existe un lead para este prestamista y esta solicitud
-        existing_lead = Lead.query.filter_by(
+        existing_lead = LenderLead.query.filter_by(
             lender_id=lender_profile.user_id,  # CORREGIDO: usar lender_id
             loan_request_id=loan_request.id
         ).first()
         
         if not existing_lead and lender_profile.leads_remaining > 0:
             # CORREGIDO: Crear lead usando lender_id
-            lead = Lead(lender_id=lender_profile.user_id, loan_request_id=loan_request.id)
+            lead = LenderLead(lender_id=lender_profile.user_id, loan_request_id=loan_request.id)
             db.session.add(lead)
             lender_profile.leads_remaining -= 1
             leads_assigned += 1
@@ -413,7 +413,7 @@ def get_lender_leads(lender_id):
     if not user.lender_profile or user.lender_profile.id != lender_id:
         return jsonify({"msg": "Acceso no autorizado"}), 403
 
-    leads = Lead.query.filter_by(lender_id=lender_id).order_by(Lead.created_at.desc()).all()
+    leads = LenderLead.query.filter_by(lender_id=lender_id).order_by(LenderLead.created_at.desc()).all()
     
     if not leads:
         return jsonify(leads_schema.dump(leads)), 200 # Devuelve lista vacía
@@ -438,7 +438,7 @@ def get_my_leads():
             return jsonify({'error': 'Perfil de prestamista no encontrado'}), 404
         
         # Buscar leads del prestamista
-        leads = Lead.query.filter_by(lender_id=lender_profile.id).order_by(Lead.created_at.desc()).all()
+        leads = LenderLead.query.filter_by(lender_id=lender_profile.id).order_by(LenderLead.created_at.desc()).all()
         
         # Procesar leads para incluir información de contacto
         leads_data = []
@@ -554,7 +554,7 @@ def update_lead_status(lead_id):
             return jsonify({'error': 'Perfil de prestamista no encontrado'}), 404
         
         # Buscar el lead
-        lead = Lead.query.filter_by(id=lead_id, lender_id=lender_profile.id).first()
+        lead = LenderLead.query.filter_by(id=lead_id, lender_id=lender_profile.id).first()
         if not lead:
             return jsonify({'error': 'Lead no encontrado o no pertenece a este prestamista'}), 404
         
@@ -624,7 +624,7 @@ def add_lead_comment(lead_id):
             return jsonify({'error': 'Usuario no encontrado'}), 404
         
         # Buscar el lead
-        lead = Lead.query.filter_by(id=lead_id, lender_id=lender_profile.id).first()
+        lead = LenderLead.query.filter_by(id=lead_id, lender_id=lender_profile.id).first()
         if not lead:
             return jsonify({'error': 'Lead no encontrado o no pertenece a este prestamista'}), 404
         

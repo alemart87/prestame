@@ -48,6 +48,16 @@ LEAD_PACKAGES = {
     'price_1RXv0UGMLNY8JgDphalXJuz2': 10,  # LEADS CON IA - 10 leads
 }
 
+# Nuevo sistema simplificado de leads
+LEAD_PRICING = {
+    'price_id': 'price_1RYzjhGMLNY8JgDpKSIvYAak',  # 1 EUR por lead
+    'unit_amount': 100,  # 1 EUR en centavos
+    'price_per_lead': 1.0,  # 1 EUR por lead (para el frontend)
+    'currency': 'eur',
+    'min_quantity': 15,
+    'max_quantity': 900
+}
+
 SUBSCRIPTION_PLANS = {
     'price_1RXmTOGMLNY8JgDpxAl1QfGx': 10,  # Starter
     'price_1RXmTdGMLNY8JgDptfVeN5bD': 50,  # Pro
@@ -92,20 +102,27 @@ def verify_checkout_session():
                 return jsonify(status='success', message=f'Suscripción activada. ¡{SUBSCRIPTION_PLANS.get(price_id, 0)} leads añadidos!'), 200
 
             elif session.mode == 'payment':
-                # Obtener el price_id de la sesión de pago
+                # Obtener el price_id y cantidad de la sesión de pago
                 line_items = stripe.checkout.Session.list_line_items(session.id, limit=1)
                 price_id = line_items.data[0].price.id
+                quantity = line_items.data[0].quantity
                 
-                # Añadir créditos del paquete de leads
-                credits_to_add = LEAD_PACKAGES.get(price_id, 0)
-                
-                # Si es el producto LEADS CON IA, añadir a ai_search_credits
-                if price_id == 'price_1RXv0UGMLNY8JgDphalXJuz2':
-                    lender_profile.ai_search_credits += credits_to_add
-                    message = f'¡Compra exitosa! Se han añadido {credits_to_add} créditos de búsqueda con IA a tu cuenta.'
+                # Verificar si es el nuevo sistema de leads
+                if price_id == LEAD_PRICING['price_id']:
+                    # Nuevo sistema: cantidad variable de leads
+                    lender_profile.lead_credits += quantity
+                    message = f'¡Compra exitosa! Se han añadido {quantity} leads a tu cuenta.'
                 else:
-                    lender_profile.lead_credits += credits_to_add
-                    message = f'¡Compra exitosa! Se han añadido {credits_to_add} leads a tu cuenta.'
+                    # Sistema anterior: paquetes fijos
+                    credits_to_add = LEAD_PACKAGES.get(price_id, 0)
+                    
+                    # Si es el producto LEADS CON IA, añadir a ai_search_credits
+                    if price_id == 'price_1RXv0UGMLNY8JgDphalXJuz2':
+                        lender_profile.ai_search_credits += credits_to_add
+                        message = f'¡Compra exitosa! Se han añadido {credits_to_add} créditos de búsqueda con IA a tu cuenta.'
+                    else:
+                        lender_profile.lead_credits += credits_to_add
+                        message = f'¡Compra exitosa! Se han añadido {credits_to_add} leads a tu cuenta.'
                 
                 db.session.commit()
                 return jsonify(status='success', message=message), 200
@@ -235,4 +252,68 @@ def create_one_time_checkout():
         return jsonify({'url': checkout_session.url}), 200
     except Exception as e:
         current_app.logger.error(f"Error al crear sesión de pago único en Stripe: {str(e)}")
+        return jsonify(error=str(e)), 500
+
+@stripe_bp.route('/get-lead-pricing', methods=['GET'])
+def get_lead_pricing():
+    """
+    Obtiene la información de precios para el sistema de leads.
+    """
+    return jsonify(LEAD_PRICING), 200
+
+@stripe_bp.route('/create-leads-checkout', methods=['POST'])
+@jwt_required()
+def create_leads_checkout():
+    """
+    Crea una sesión de Checkout de Stripe para comprar leads con cantidad variable.
+    """
+    data = request.get_json()
+    quantity = data.get('quantity')
+    
+    if not quantity or quantity < LEAD_PRICING['min_quantity'] or quantity > LEAD_PRICING['max_quantity']:
+        return jsonify({
+            'error': f'La cantidad debe estar entre {LEAD_PRICING["min_quantity"]} y {LEAD_PRICING["max_quantity"]} leads'
+        }), 400
+
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({'error': 'Usuario no encontrado'}), 404
+
+    stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
+
+    try:
+        # Obtener o crear cliente de Stripe
+        customer = get_or_create_stripe_customer(user)
+        current_app.logger.info(f"Cliente Stripe obtenido: {customer.id}")
+        
+        # Obtener CORS_ORIGINS con valor por defecto
+        cors_origins = current_app.config.get('CORS_ORIGINS', 'http://localhost:3000')
+        success_url = f"{cors_origins}/payment-success?session_id={{CHECKOUT_SESSION_ID}}&purchase=leads"
+        cancel_url = f"{cors_origins}/subscriptions"
+        
+        current_app.logger.info(f"URLs configuradas - Success: {success_url}, Cancel: {cancel_url}")
+        current_app.logger.info(f"Creando sesión con price_id: {LEAD_PRICING['price_id']}, quantity: {quantity}")
+
+        checkout_session = stripe.checkout.Session.create(
+            customer=customer.id,
+            payment_method_types=['card'],
+            line_items=[
+                {
+                    'price': LEAD_PRICING['price_id'],
+                    'quantity': quantity,
+                },
+            ],
+            mode='payment',
+            success_url=success_url,
+            cancel_url=cancel_url,
+        )
+        current_app.logger.info(f"Sesión creada exitosamente: {checkout_session.id}")
+        return jsonify({'url': checkout_session.url, 'sessionId': checkout_session.id}), 200
+    except Exception as e:
+        current_app.logger.error(f"Error al crear sesión de checkout para leads: {str(e)}")
+        current_app.logger.error(f"Tipo de error: {type(e)}")
+        import traceback
+        current_app.logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify(error=str(e)), 500 
