@@ -57,7 +57,7 @@ export default function LoansPage() {
   if (authLoading || loading) {
     return (
       <AnimatedBackground particleCount={15}>
-        <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-screen">
           <GlassCard className="text-center">
             <motion.div
               className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full mx-auto mb-4"
@@ -66,7 +66,7 @@ export default function LoansPage() {
             />
             <p className="text-white/80 text-lg">Cargando...</p>
           </GlassCard>
-        </div>
+      </div>
       </AnimatedBackground>
     );
   }
@@ -76,30 +76,30 @@ export default function LoansPage() {
       <AppNavbar />
       <AnimatedBackground particleCount={20}>
         <div className="min-h-screen pt-20 px-4">
-          <div className="max-w-7xl mx-auto space-y-8">
-            {/* Header */}
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* Header */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               className="text-center"
             >
-              <motion.h1 
+                <motion.h1 
                 className="text-4xl md:text-6xl font-bold text-white mb-4"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-              >
-                Mercado de Préstamos
-              </motion.h1>
-              <motion.p 
+                  transition={{ delay: 0.2, duration: 0.6 }}
+                >
+                  Mercado de Préstamos
+                </motion.h1>
+                <motion.p 
                 className="text-white/70 text-xl max-w-3xl mx-auto"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.6 }}
-              >
+                  transition={{ delay: 0.3, duration: 0.6 }}
+                >
                 Conectamos prestatarios con prestamistas de manera segura y transparente
-              </motion.p>
+                </motion.p>
             </motion.div>
 
             {/* Estadísticas Públicas */}
@@ -140,8 +140,8 @@ export default function LoansPage() {
                     description: 'Exitosamente'
                   }
                 ].map((stat, index) => {
-                  const Icon = stat.icon;
-                  return (
+                    const Icon = stat.icon;
+                    return (
                     <motion.div
                       key={index}
                       initial={{ opacity: 0, y: 50 }}
@@ -150,18 +150,18 @@ export default function LoansPage() {
                       whileHover={{ y: -5 }}
                     >
                       <GlassCard className="text-center h-full">
-                        <motion.div
-                          className={`w-16 h-16 bg-gradient-to-r ${stat.gradient} rounded-3xl flex items-center justify-center mx-auto mb-4`}
-                          whileHover={{ scale: 1.1, rotate: 5 }}
-                        >
-                          <Icon className="w-8 h-8 text-white" />
-                        </motion.div>
-                        <p className="text-white text-2xl font-bold mb-1">{stat.value}</p>
+                            <motion.div
+                            className={`w-16 h-16 bg-gradient-to-r ${stat.gradient} rounded-3xl flex items-center justify-center mx-auto mb-4`}
+                            whileHover={{ scale: 1.1, rotate: 5 }}
+                            >
+                            <Icon className="w-8 h-8 text-white" />
+                            </motion.div>
+                            <p className="text-white text-2xl font-bold mb-1">{stat.value}</p>
                         <p className="text-white/70 text-sm font-medium">{stat.label}</p>
                         <p className="text-white/50 text-xs mt-1">{stat.description}</p>
-                      </GlassCard>
+                        </GlassCard>
                     </motion.div>
-                  );
+                    );
                 })}
               </motion.div>
             )}
@@ -214,7 +214,7 @@ export default function LoansPage() {
 
               {/* Para Prestamistas */}
               <GlassCard className="text-center">
-                <motion.div
+                  <motion.div
                   className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-600 rounded-3xl flex items-center justify-center mx-auto mb-6"
                   whileHover={{ scale: 1.1, rotate: 5 }}
                 >
@@ -233,7 +233,7 @@ export default function LoansPage() {
                   <div className="flex items-center text-white/80">
                     <FiLock className="w-4 h-4 mr-2 text-purple-400" />
                     <span>Scoring completo</span>
-                  </div>
+                          </div>
                   <div className="flex items-center text-white/80">
                     <FiLock className="w-4 h-4 mr-2 text-purple-400" />
                     <span>CRM integrado</span>
@@ -254,16 +254,16 @@ export default function LoansPage() {
                   <Link href="/register">
                     <motion.button
                       className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center space-x-2"
-                      whileHover={{ scale: 1.05 }}
+                          whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                    >
+                        >
                       <span>Registrarse como Prestamista</span>
                       <FiArrowRight className="w-4 h-4" />
                     </motion.button>
-                  </Link>
+                      </Link>
                 )}
-              </GlassCard>
-            </motion.div>
+                    </GlassCard>
+                  </motion.div>
 
             {/* Aviso de Seguridad */}
             <motion.div

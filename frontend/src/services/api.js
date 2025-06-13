@@ -339,7 +339,7 @@ export const aiService = {
       // El backend devuelve la estructura: { message: "...", analysis: { ... } }
       // Necesitamos extraer solo la parte del analysis
       if (data.analysis) {
-        return data.analysis;
+      return data.analysis;
       } else {
         throw new Error('Respuesta del análisis no tiene el formato esperado');
       }

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Prestame - Plataforma de Préstamos P2P 🏦
 
 Una plataforma moderna de préstamos peer-to-peer que conecta prestamistas con solicitantes de préstamos en Paraguay, con un sistema avanzado de búsqueda de leads reales usando web scraping.
@@ -290,3 +291,6 @@ Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
 - **Password**: SuperAdmin123!
 
 **¡Prestame - Conectando oportunidades financieras en Paraguay! 🇵🇾**
+=======
+# prestame
+>>>>>>> 35882bd5938a1d35d320a684876f8cc2cbd3e847

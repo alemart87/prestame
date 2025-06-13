@@ -70,31 +70,31 @@ const SubscriptionsPage = () => {
                         >
                             <h1 className="text-4xl md:text-6xl font-bold text-white">
                                 Compra Leads Verificados
-                            </h1>
+                    </h1>
                             <p className="text-lg text-white/70 mt-4 max-w-3xl mx-auto">
                                 Accede a leads de calidad verificados. Pago único, sin suscripciones.
                                 Solo pagas por lo que necesitas.
-                            </p>
+                    </p>
                         </motion.div>
 
                         {/* Error Message */}
-                        {error && (
+                {error && (
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 className="bg-red-500/20 border border-red-500/30 text-red-300 px-4 py-3 rounded-lg relative max-w-3xl mx-auto"
                             >
-                                <strong className="font-bold">Error: </strong>
+                        <strong className="font-bold">Error: </strong>
                                 <span>{error}</span>
                             </motion.div>
-                        )}
+                )}
 
                         {/* Main Purchase Card */}
-                        <motion.div
+                                <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2, duration: 0.8 }}
-                        >
+                                >
                             <GlassCard className="max-w-2xl mx-auto">
                                 <div className="text-center p-8">
                                     <div className="mb-8">
@@ -113,7 +113,7 @@ const SubscriptionsPage = () => {
                                                 €{pricing.price_per_lead}
                                             </span>
                                             <span className="text-white/70 text-xl ml-2">por lead</span>
-                                        </div>
+                                </div>
 
                                         {/* Quantity Selector */}
                                         <div className="mb-6">
@@ -141,20 +141,20 @@ const SubscriptionsPage = () => {
                                                         max={pricing.max_quantity}
                                                         className="w-full text-center text-2xl font-bold bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     />
-                                                </div>
+                                </div>
                                                 
-                                                <motion.button
+                                            <motion.button
                                                     onClick={() => handleQuantityChange(quantity + 1)}
                                                     disabled={quantity >= pricing.max_quantity}
                                                     className="p-3 bg-white/10 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    whileHover={{ scale: 1.05 }}
-                                                    whileTap={{ scale: 0.95 }}
-                                                >
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                            >
                                                     <FiPlus className="w-5 h-5" />
-                                                </motion.button>
-                                            </div>
-                                        </div>
-
+                                            </motion.button>
+                        </div>
+                        </div>
+                        
                                         {/* Total Price */}
                                         <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl p-4 mb-6">
                                             <div className="flex justify-between items-center text-white">
@@ -167,13 +167,13 @@ const SubscriptionsPage = () => {
                                         </div>
 
                                         {/* Purchase Button */}
-                                        <motion.button
+                                            <motion.button
                                             onClick={handlePurchase}
                                             disabled={isLoading}
                                             className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white font-bold py-4 px-8 rounded-xl text-lg disabled:opacity-60 flex items-center justify-center space-x-2"
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
-                                        >
+                                            >
                                             {isLoading ? (
                                                 <>
                                                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
@@ -185,7 +185,7 @@ const SubscriptionsPage = () => {
                                                     <span>Comprar {quantity} Leads</span>
                                                 </>
                                             )}
-                                        </motion.button>
+                                            </motion.button>
                                     </div>
 
                                     {/* Features */}
@@ -204,7 +204,7 @@ const SubscriptionsPage = () => {
                                             </div>
                                         ))}
                                     </div>
-                                </div>
+                            </div>
                             </GlassCard>
                         </motion.div>
                     </div>

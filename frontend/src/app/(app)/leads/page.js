@@ -1082,7 +1082,7 @@ const LeadsPage = () => {
                                                                             </div>
                                                                         )}
                                                                     </div>
-
+                                                                        
                                                                     {/* Información de Contacto o Botón de Compra */}
                                                                     {lead.is_purchased ? (
                                                                         <div className="mt-4 space-y-3 bg-gradient-to-r from-green-500/20 to-emerald-500/20 p-4 rounded-xl border border-green-500/30">

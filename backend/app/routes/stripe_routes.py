@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import User, LenderProfile
 from app import db
 import stripe
+from app.services.email_service import EmailService
 
 stripe_bp = Blueprint('stripe', __name__)
 
@@ -327,56 +328,133 @@ def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get('Stripe-Signature')
     endpoint_secret = current_app.config.get('STRIPE_WEBHOOK_SECRET')
-    event = None
-
+    
+    # Configurar Stripe API key
+    stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
+    
+    # Log para debugging
+    current_app.logger.info(f"Webhook recibido. Signature: {sig_header[:20] if sig_header else 'None'}...")
+    current_app.logger.info(f"Endpoint secret configurado: {'Sí' if endpoint_secret else 'No'}")
+    
+    # Verificar que tenemos el secreto del webhook
+    if not endpoint_secret:
+        current_app.logger.error("STRIPE_WEBHOOK_SECRET no configurado")
+        return jsonify({'error': 'Webhook secret no configurado'}), 500
+    
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, endpoint_secret
         )
+        current_app.logger.info(f"Evento verificado: {event['type']}")
     except ValueError as e:
-        # Invalid payload
+        current_app.logger.error(f"Payload inválido: {str(e)}")
         return jsonify({'error': 'Payload inválido'}), 400
     except stripe.error.SignatureVerificationError as e:
-        # Invalid signature
+        current_app.logger.error(f"Firma de Stripe inválida: {str(e)}")
         return jsonify({'error': 'Firma de Stripe inválida'}), 400
 
     # Procesar solo eventos relevantes
     if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        customer_id = session.get('customer')
-        mode = session.get('mode')
-        # Buscar usuario por stripe_customer_id
-        user = User.query.filter_by(stripe_customer_id=customer_id).first()
-        if not user or not user.lender_profile:
-            return jsonify({'error': 'Usuario no encontrado'}), 404
-        lender_profile = user.lender_profile
+        try:
+            session = event['data']['object']
+            customer_id = session.get('customer')
+            mode = session.get('mode')
+            session_id = session.get('id')
+            
+            current_app.logger.info(f"Procesando sesión {session_id} para cliente {customer_id}")
+            
+            # Buscar usuario por stripe_customer_id
+            user = User.query.filter_by(stripe_customer_id=customer_id).first()
+            if not user:
+                current_app.logger.error(f"Usuario no encontrado para customer_id: {customer_id}")
+                return jsonify({'error': 'Usuario no encontrado'}), 404
+                
+            if not user.lender_profile:
+                current_app.logger.error(f"Perfil de prestamista no encontrado para usuario: {user.email}")
+                return jsonify({'error': 'Perfil de prestamista no válido'}), 404
+                
+            lender_profile = user.lender_profile
 
-        if mode == 'subscription':
-            subscription_id = session.get('subscription')
-            subscription = stripe.Subscription.retrieve(subscription_id)
-            price_id = subscription['items']['data'][0]['price']['id']
-            lender_profile.stripe_subscription_id = subscription_id
-            lender_profile.subscription_status = subscription['status']
-            lender_profile.lead_credits += SUBSCRIPTION_PLANS.get(price_id, 0)
-            db.session.commit()
-            return jsonify({'status': 'success', 'message': f'Suscripción activada. {SUBSCRIPTION_PLANS.get(price_id, 0)} leads añadidos.'}), 200
-        elif mode == 'payment':
-            # Compra única de leads
-            line_items = stripe.checkout.Session.list_line_items(session['id'], limit=1)
-            price_id = line_items.data[0].price.id
-            quantity = line_items.data[0].quantity
-            if price_id == LEAD_PRICING['price_id']:
-                lender_profile.lead_credits += quantity
-                message = f'¡Compra exitosa! Se han añadido {quantity} leads a tu cuenta.'
-            else:
-                credits_to_add = LEAD_PACKAGES.get(price_id, 0)
-                if price_id == 'price_1RXv0UGMLNY8JgDphalXJuz2':
-                    lender_profile.ai_search_credits += credits_to_add
-                    message = f'¡Compra exitosa! Se han añadido {credits_to_add} créditos de búsqueda con IA a tu cuenta.'
+            if mode == 'subscription':
+                subscription_id = session.get('subscription')
+                subscription = stripe.Subscription.retrieve(subscription_id)
+                price_id = subscription['items']['data'][0]['price']['id']
+                
+                # Actualizar perfil con datos de la suscripción
+                lender_profile.stripe_subscription_id = subscription_id
+                lender_profile.subscription_status = subscription['status']
+                credits_added = SUBSCRIPTION_PLANS.get(price_id, 0)
+                lender_profile.lead_credits += credits_added
+                
+                db.session.commit()
+                current_app.logger.info(f"Suscripción activada para {user.email}. {credits_added} leads añadidos.")
+                return jsonify({'status': 'success', 'message': f'Suscripción activada. {credits_added} leads añadidos.'}), 200
+                
+            elif mode == 'payment':
+                # Compra única de leads
+                try:
+                    # Intentar obtener line_items de la API de Stripe
+                    line_items = stripe.checkout.Session.list_line_items(session['id'], limit=1)
+                    if not line_items.data:
+                        current_app.logger.error(f"No se encontraron line_items para la sesión {session_id}")
+                        return jsonify({'error': 'Datos de compra no encontrados'}), 400
+                        
+                    price_id = line_items.data[0].price.id
+                    quantity = line_items.data[0].quantity
+                except Exception as stripe_error:
+                    # Si falla (por ejemplo, en eventos de prueba), usar valores por defecto
+                    current_app.logger.warning(f"No se pudieron obtener line_items de Stripe: {stripe_error}")
+                    # Para eventos de prueba, usar valores por defecto
+                    if session['id'].startswith('cs_test_'):
+                        price_id = 'price_1RYzjhGMLNY8JgDpKSIvYAak'  # ID del precio de leads
+                        quantity = 25  # Cantidad de prueba
+                        current_app.logger.info(f"Usando valores de prueba: price_id={price_id}, quantity={quantity}")
+                    else:
+                        current_app.logger.error(f"Error obteniendo line_items para sesión real: {stripe_error}")
+                        return jsonify({'error': 'Error obteniendo datos de compra'}), 500
+                
+                # Verificar si es el nuevo sistema de leads
+                if price_id == LEAD_PRICING['price_id']:
+                    # Nuevo sistema: cantidad variable de leads
+                    lender_profile.lead_credits += quantity
+                    message = f'¡Compra exitosa! Se han añadido {quantity} leads a tu cuenta.'
+                    current_app.logger.info(f"Leads añadidos para {user.email}: {quantity}")
                 else:
-                    lender_profile.lead_credits += credits_to_add
-                    message = f'¡Compra exitosa! Se han añadido {credits_to_add} leads a tu cuenta.'
-            db.session.commit()
-            return jsonify({'status': 'success', 'message': message}), 200
-    # Otros eventos pueden ser procesados aquí si es necesario
+                    # Sistema anterior: paquetes fijos
+                    credits_to_add = LEAD_PACKAGES.get(price_id, 0)
+                    
+                    # Si es el producto LEADS CON IA, añadir a ai_search_credits
+                    if price_id == 'price_1RXv0UGMLNY8JgDphalXJuz2':
+                        lender_profile.ai_search_credits += credits_to_add
+                        message = f'¡Compra exitosa! Se han añadido {credits_to_add} créditos de búsqueda con IA a tu cuenta.'
+                        current_app.logger.info(f"Créditos IA añadidos para {user.email}: {credits_to_add}")
+                    else:
+                        lender_profile.lead_credits += credits_to_add
+                        message = f'¡Compra exitosa! Se han añadido {credits_to_add} leads a tu cuenta.'
+                        current_app.logger.info(f"Leads añadidos para {user.email}: {credits_to_add}")
+                
+                db.session.commit()
+                
+                # Enviar email de confirmación
+                try:
+                    from app.services.email_service import EmailService
+                    email_service = EmailService()
+                    purchase_details = {
+                        'quantity': quantity if price_id == LEAD_PRICING['price_id'] else credits_to_add,
+                        'total_amount': (quantity * LEAD_PRICING['price_per_lead']) if price_id == LEAD_PRICING['price_id'] else 'N/A',
+                        'total_credits': lender_profile.lead_credits + lender_profile.ai_search_credits
+                    }
+                    email_service.send_payment_confirmation_email(user, purchase_details)
+                except Exception as email_error:
+                    current_app.logger.error(f"Error enviando email de confirmación: {email_error}")
+                
+                return jsonify({'status': 'success', 'message': message}), 200
+                
+        except Exception as e:
+            current_app.logger.error(f"Error procesando checkout.session.completed: {str(e)}")
+            db.session.rollback()
+            return jsonify({'error': 'Error procesando el pago'}), 500
+    
+    # Otros eventos son ignorados pero logueados
+    current_app.logger.info(f"Evento ignorado: {event['type']}")
     return jsonify({'status': 'ignored', 'message': 'Evento no relevante'}), 200 

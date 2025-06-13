@@ -235,20 +235,20 @@ export default function DashboardPage() {
         {profile && isBorrower && (
                   <div className="flex space-x-4">
                     {/* Score Katupyry */}
-                    <GlassCard className="text-center">
-                      <div className="flex items-center space-x-4">
-                        <motion.div
-                          className={`w-16 h-16 bg-gradient-to-r ${getScoreColor(profile.score || 0)} rounded-2xl flex items-center justify-center`}
-                          whileHover={{ scale: 1.1, rotate: 5 }}
-                        >
-                          <FiStar className="w-8 h-8 text-white" />
-                        </motion.div>
-                        <div className="text-left">
-                          <p className="text-white/70 text-sm">Score Katupyry</p>
-                          <p className="text-white text-2xl font-bold">{profile.score || 0}</p>
-                        </div>
+                  <GlassCard className="text-center">
+                    <div className="flex items-center space-x-4">
+                      <motion.div
+                        className={`w-16 h-16 bg-gradient-to-r ${getScoreColor(profile.score || 0)} rounded-2xl flex items-center justify-center`}
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                      >
+                        <FiStar className="w-8 h-8 text-white" />
+                      </motion.div>
+                      <div className="text-left">
+                        <p className="text-white/70 text-sm">Score Katupyry</p>
+                        <p className="text-white text-2xl font-bold">{profile.score || 0}</p>
                       </div>
-                    </GlassCard>
+          </div>
+                  </GlassCard>
 
                     {/* Score Final (si existe) */}
                     {aiAnalysis?.final_score && (
@@ -643,30 +643,30 @@ export default function DashboardPage() {
 
                   {/* Panel de Score Breakdown (si existe) */}
                   {aiAnalysis && (
-                    <motion.div
-                      initial={{ opacity: 0, x: 50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 1.0, duration: 0.6 }}
-                    >
-                      <GlassCard>
-                        <h3 className="text-2xl font-semibold text-white mb-6 flex items-center">
+                  <motion.div
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1.0, duration: 0.6 }}
+                  >
+                    <GlassCard>
+                      <h3 className="text-2xl font-semibold text-white mb-6 flex items-center">
                           <FiBarChart className="mr-3 text-purple-400" />
                           Desglose de tu Score
-                        </h3>
-                        <div className="space-y-4">
+                      </h3>
+                      <div className="space-y-4">
                           {/* Score Final */}
                           <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-4 rounded-xl border border-purple-500/30">
                             <div className="flex justify-between items-center">
-                              <div>
+                    <div>
                                 <p className="text-white font-semibold">Score Final IA</p>
                                 <p className="text-white/60 text-sm">Evaluación integral</p>
-                              </div>
+                    </div>
                               <div className="text-right">
                                 <p className="text-white text-2xl font-bold">{aiAnalysis.final_score?.toFixed(1)}</p>
                                 <p className="text-white/50 text-xs">
                                   {getScoreLevel(aiAnalysis.final_score).icon} {getScoreLevel(aiAnalysis.final_score).level}
                                 </p>
-                              </div>
+                  </div>
                             </div>
                           </div>
 
@@ -705,9 +705,9 @@ export default function DashboardPage() {
                               }
                             </p>
                           </div>
-                        </div>
-                      </GlassCard>
-                    </motion.div>
+              </div>
+                    </GlassCard>
+                  </motion.div>
                   )}
           </>
         )}

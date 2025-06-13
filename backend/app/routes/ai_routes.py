@@ -284,7 +284,7 @@ def test_chat():
         
     except Exception as e:
         current_app.logger.error(f"Error en el endpoint de chat de prueba: {e}")
-        return jsonify({"error": "Ha ocurrido un error interno."}), 500
+        return jsonify({"error": "Ha ocurrido un error interno."}), 500 
 
 @ai_bp.route('/calculate-final-score', methods=['POST'])
 @jwt_required()

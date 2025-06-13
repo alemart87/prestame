@@ -11,6 +11,8 @@ import datetime
 from app.utils.stripe_utils import create_stripe_customer
 from app.utils.email_utils import send_email
 from flask import url_for
+from app.services.email_service import EmailService
+from flask import current_app
 
 auth_bp = Blueprint('auth', __name__)
 user_schema = UserSchema()
@@ -72,6 +74,18 @@ def register():
             # Continuar sin Stripe si hay error
             
         db.session.commit()
+        
+        # --- Enviar email de bienvenida ---
+        try:
+            email_service = EmailService()
+            if user.user_type == 'borrower':
+                email_service.send_borrower_welcome_email(user)
+            elif user.user_type == 'lender':
+                email_service.send_lender_welcome_email(user)
+        except Exception as email_error:
+            current_app.logger.error(f"Error enviando email de bienvenida: {email_error}")
+            # No fallar el registro por error de email
+        
         # -----------------------------
         
         # Generar token JWT

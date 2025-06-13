@@ -145,7 +145,7 @@ export default function HowItWorksPage() {
                 </motion.div>
               </motion.div>
             </motion.div>
-          </div>
+      </div>
         </section>
       </AnimatedBackground>
 
@@ -161,7 +161,7 @@ export default function HowItWorksPage() {
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
               ¿Cómo se calcula tu Score Final?
-            </h2>
+          </h2>
             <p className="text-xl text-white/70 max-w-3xl mx-auto">
               Nuestro algoritmo de IA combina múltiples fuentes de datos para crear 
               la evaluación más precisa y justa de tu perfil crediticio.
