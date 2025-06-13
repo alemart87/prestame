@@ -1,0 +1,19 @@
+@echo off
+echo Limpiando proyecto Next.js...
+
+echo Eliminando .next...
+if exist .next rmdir /s /q .next
+
+echo Eliminando node_modules...
+if exist node_modules rmdir /s /q node_modules
+
+echo Eliminando package-lock.json...
+if exist package-lock.json del package-lock.json
+
+echo Instalando dependencias...
+npm install
+
+echo Iniciando servidor de desarrollo...
+npm run dev
+
+pause 

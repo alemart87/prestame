@@ -4,53 +4,40 @@ import { AuthProvider } from '../context/AuthContext';
 import AppShell from './AppShell';
 import { AIScoreButton, AIWowEffect } from '../components/AIComponents';
 import '../styles/globals.css';
+import PWAInstallPrompt from '../components/PWAInstallPrompt';
+import OfflineIndicator from '../components/OfflineIndicator';
 
 const inter = Inter({ subsets: ['latin'] });
 
 // METADATA PARA SEO
 export const metadata = {
-  title: {
-    template: '%s | Prestame - Educación Financiera',
-    default: 'Prestame - Tu Guía Hacia el Bienestar Financiero en Paraguay',
+  title: 'Prestame - Plataforma de Préstamos P2P',
+  description: 'Plataforma de préstamos entre particulares con IA para scoring crediticio',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Prestame'
   },
-  description: 'Aprende a manejar tus finanzas, mejora tu score crediticio con IA y accede a las mejores oportunidades de inversión y préstamos en Paraguay.',
-  metadataBase: new URL('https://prestame-frontend.onrender.com'),
-  openGraph: {
-    title: 'Prestame - Educación Financiera',
-    description: 'Más que préstamos, te damos el conocimiento para que tomes el control de tu futuro financiero.',
-    url: 'https://www.prestame.com.py',
-    siteName: 'Prestame',
-    images: [
-      {
-        url: '/og-image.jpg',
-        width: 1200,
-        height: 630,
-      },
-    ],
-    locale: 'es_PY',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Prestame - Tu Guía Financiera',
-    description: 'Aprende, mejora tu score con IA y accede a las mejores oportunidades financieras en Paraguay.',
-    images: ['/og-image.jpg'],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
-  icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
-  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'black-translucent',
+    'apple-mobile-web-app-title': 'Prestame',
+    'application-name': 'Prestame',
+    'msapplication-TileColor': '#3b82f6',
+    'msapplication-config': '/browserconfig.xml'
+  }
+};
+
+// Nuevo export para viewport (Next.js 14+)
+export const viewport = {
+  themeColor: '#3b82f6',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover'
 };
 
 const jsonLd = {
@@ -80,12 +67,17 @@ export default function RootLayout({ children }) {
         <meta name="description" content="Conectamos personas que necesitan préstamos con prestamistas" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-startup-image" href="/icons/icon-512x512.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
       <body className={inter.className}>
+        <OfflineIndicator />
         <Toaster position="top-center" reverseOrder={false} />
         <AuthProvider>
           {/* ✅ EFECTO WOW DE IA */}
@@ -96,6 +88,7 @@ export default function RootLayout({ children }) {
           {/* ✅ BOTÓN DE IA SCORING */}
           <AIScoreButton />
         </AuthProvider>
+        <PWAInstallPrompt />
       </body>
     </html>
   );

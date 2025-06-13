@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generador de Iconos PWA</title>
+</head>
+<body>
+    <canvas id="canvas" width="512" height="512"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Crear ícono con gradiente
+        const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+        gradient.addColorStop(0, '#3b82f6');
+        gradient.addColorStop(1, '#8b5cf6');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 512, 512);
+        
+        // Agregar texto
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 120px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('P', 256, 300);
+        
+        // Descargar diferentes tamaños
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        
+        sizes.forEach(size => {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = size;
+            tempCanvas.height = size;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(canvas, 0, 0, size, size);
+            
+            const link = document.createElement('a');
+            link.download = `icon-${size}x${size}.png`;
+            link.href = tempCanvas.toDataURL();
+            link.click();
+        });
+    </script>
+</body>
+</html> 

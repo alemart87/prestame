@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generador de Iconos Prestame</title>
+</head>
+<body>
+    <h2>Generando iconos para PWA...</h2>
+    <div id="icons"></div>
+    
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const iconsDiv = document.getElementById('icons');
+        
+        sizes.forEach(size => {
+            // Crear canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Fondo con gradiente
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#3b82f6');
+            gradient.addColorStop(0.5, '#8b5cf6');
+            gradient.addColorStop(1, '#1e1b4b');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Borde redondeado
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.beginPath();
+            ctx.roundRect(0, 0, size, size, size * 0.15);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // Texto "P"
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.4}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('P', size / 2, size / 2);
+            
+            // Mostrar en página
+            const img = document.createElement('img');
+            img.src = canvas.toDataURL();
+            img.style.width = '64px';
+            img.style.height = '64px';
+            img.style.margin = '5px';
+            img.title = `${size}x${size}`;
+            iconsDiv.appendChild(img);
+            
+            // Crear enlace de descarga
+            const link = document.createElement('a');
+            link.download = `icon-${size}x${size}.png`;
+            link.href = canvas.toDataURL();
+            link.textContent = `Descargar ${size}x${size}`;
+            link.style.display = 'block';
+            link.style.margin = '2px';
+            iconsDiv.appendChild(link);
+        });
+        
+        // Auto-descargar todos
+        setTimeout(() => {
+            const links = document.querySelectorAll('a[download]');
+            links.forEach((link, index) => {
+                setTimeout(() => link.click(), index * 500);
+            });
+        }, 1000);
+    </script>
+</body>
+</html> 
