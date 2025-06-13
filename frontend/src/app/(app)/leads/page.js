@@ -49,7 +49,8 @@ import {
   FiCpu,
   FiDollarSign,
   FiLock,
-  FiUnlock
+  FiUnlock,
+  FiShoppingCart
 } from 'react-icons/fi';
 import AnimatedBackground from '../../../components/AnimatedBackground';
 import GlassCard from '../../../components/GlassCard';
@@ -118,14 +119,18 @@ const LeadsPage = () => {
     const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
-    const [viewMode, setViewMode] = useState('grid'); // 'grid' o 'list'
+    const [viewMode, setViewMode] = useState('list'); // 'grid' o 'list'
     const [selectedLead, setSelectedLead] = useState(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [purchasingId, setPurchasingId] = useState(null);
     const [filters, setFilters] = useState({
         status: 'all',
         dateRange: 'all',
-        source: 'all'
+        source: 'all',
+        min_amount: '',
+        max_amount: '',
+        location: '',
+        credit_score_min: ''
     });
     const [followUpDate, setFollowUpDate] = useState(new Date());
     const [newComment, setNewComment] = useState('');
@@ -134,6 +139,10 @@ const LeadsPage = () => {
     const router = useRouter();
     const [loadingLeads, setLoadingLeads] = useState({}); // Asegúrate de que esté aquí
     const [dataSource, setDataSource] = useState('all'); // Nuevo estado para filtrar origen
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [purchasedLeads, setPurchasedLeads] = useState(new Set());
+    const leadsPerPage = 10;
 
     // Agrega esto después de los estados para verificar
     useEffect(() => {
@@ -147,13 +156,12 @@ const LeadsPage = () => {
         
         if (user?.user_type !== 'lender') {
             console.log("❌ Usuario no es prestamista");
-            setIsLoading(false); // Detener carga si no es prestamista
+            setIsLoading(false);
             return;
         }
         
         setIsLoading(true);
         try {
-            // Usar filtros
             const filterParams = {};
             if (filters.status !== 'all') filterParams.status = filters.status;
             if (searchTerm) filterParams.search = searchTerm;
@@ -161,6 +169,12 @@ const LeadsPage = () => {
             console.log("📡 Llamando a getLeadsForLender...");
             const fetchedLeads = await getLeadsForLender(filterParams);
             console.log("✅ Leads obtenidos del API:", fetchedLeads);
+            
+            // ✅ AGREGAR: Log detallado del primer lead
+            if (fetchedLeads && fetchedLeads.length > 0) {
+                console.log("🔍 Estructura del primer lead:", fetchedLeads[0]);
+            }
+            
             setLeads(fetchedLeads || []);
             setLastUpdated(new Date());
             if (showToast) {
@@ -1329,20 +1343,16 @@ const LeadsPage = () => {
                                             </td>
 
                                                                     {/* Monto */}
-                                                                    <td className="px-4 py-3">
-                                                                        {lead.loan_request ? (
-                                                                            <div>
-                                                                                <p className="text-white font-medium">
-                                                                                    Gs. {lead.loan_request.amount?.toLocaleString()}
-                                                                                </p>
-                                                                                <p className="text-white/60 text-xs">
-                                                                                    {lead.loan_request.term_months} meses
-                                                                                </p>
-                                                </div>
-                                                                        ) : (
-                                                                            <span className="text-white/40">N/A</span>
-                                                                        )}
-                                            </td>
+                                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                                      <div className="flex items-center text-sm text-white">
+                                                                        <FiDollarSign className="w-4 h-4 mr-1 text-green-400" />
+                                                                        {lead.amount ? new Intl.NumberFormat('es-PY', {
+                                                                          style: 'currency',
+                                                                          currency: 'PYG',
+                                                                          minimumFractionDigits: 0
+                                                                        }).format(lead.amount) : 'N/A'}
+                                                                      </div>
+                                                                    </td>
 
                                                                     {/* Seguimiento */}
                                                                     <td className="px-4 py-3">

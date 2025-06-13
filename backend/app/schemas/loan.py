@@ -9,12 +9,15 @@ class LoanRequestSchema(ma.SQLAlchemyAutoSchema):
         include_fk = True
         
     id = fields.Int(dump_only=True)
-    borrower_id = fields.Int(required=True)
+    borrower_profile_id = fields.Int(required=True)
     amount = fields.Float(required=True)
     term_months = fields.Int(required=True)
     purpose = fields.Str(required=True)
     status = fields.Str(dump_only=True)
     payment_frequency = fields.Str(required=True)
+    description = fields.Str()
+    collateral = fields.Str()
+    is_public = fields.Bool()
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
 

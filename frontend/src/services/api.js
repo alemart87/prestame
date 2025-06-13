@@ -425,4 +425,22 @@ export const aiService = {
   }
 };
 
-export default api; 
+export default api;
+
+// Agregar estos métodos si no existen:
+export const adminAPI = {
+  // Obtener estadísticas de admin
+  getStats: () => api.get('/admin/stats'),
+  
+  // Obtener todos los usuarios
+  getUsers: () => api.get('/admin/users'),
+  
+  // Asignar créditos a usuario
+  assignCredits: (userId, credits) => api.post(`/admin/users/${userId}/credits`, { credits }),
+  
+  // Alternar estado del usuario
+  toggleUserStatus: (userId) => api.patch(`/admin/users/${userId}/toggle-status`),
+  
+  // Eliminar usuario
+  deleteUser: (userId) => api.delete(`/admin/users/${userId}`)
+}; 

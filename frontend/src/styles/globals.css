@@ -229,4 +229,39 @@
   .text-shadow-lg {
     text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }
+
+  /* Efecto blur para datos de contacto no comprados */
+  .contact-blurred {
+    filter: blur(3px);
+    -webkit-filter: blur(3px);
+    user-select: none;
+    pointer-events: none;
+    transition: filter 0.3s ease;
+  }
+
+  .contact-blurred:hover {
+    filter: blur(2px);
+    -webkit-filter: blur(2px);
+  }
+
+  /* Indicador de contenido bloqueado */
+  .locked-content {
+    position: relative;
+    background: linear-gradient(45deg, #f3f4f6 25%, transparent 25%), 
+                linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #f3f4f6 75%), 
+                linear-gradient(-45deg, transparent 75%, #f3f4f6 75%);
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  }
+
+  .blur-overlay::after {
+    content: '🔒';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.2em;
+    opacity: 0.7;
+  }
 } 

@@ -1,0 +1,6 @@
+# Allow all user agents
+User-agent: *
+Disallow: /admin # No queremos que Google indexe el dashboard de admin
+
+# Sitemap location
+Sitemap: https://www.prestame.com.py/sitemap.xml # Reemplaza con tu dominio 

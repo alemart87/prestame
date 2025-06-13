@@ -3,375 +3,585 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useRouter } from 'next/navigation';
-import api from '../../../services/api'; // Importar la instancia de axios
+import api from '../../../services/api';
+import toast from 'react-hot-toast';
 import LoadingSpinner from '../../../components/LoadingSpinner';
-import { FiUsers, FiDollarSign, FiCheckSquare, FiAlertTriangle, FiToggleLeft, FiToggleRight, FiTrash2, FiShare2, FiZap, FiCreditCard, FiPlus, FiEdit, FiEye } from 'react-icons/fi';
-import { toast } from 'react-hot-toast';
+import GlassCard from '../../../components/GlassCard';
+import { FiUsers, FiDollarSign, FiCheckSquare, FiAlertTriangle, FiZap, FiCreditCard, FiToggleLeft, FiToggleRight, FiTrash2 } from 'react-icons/fi';
 
-// Componente para las tarjetas de estadísticas
-const StatCard = ({ title, value, icon, color }) => (
-  <div className={`card ${color}`}>
-    <div className="flex items-center">
-      <div className="p-3 mr-4 text-gray-700 bg-gray-200 rounded-full">
+// Componente para estadísticas
+const StatCard = ({ title, value, icon, color, subtitle }) => (
+  <GlassCard className="p-6 text-center">
+    <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${color} text-white mb-4 mx-auto`}>
         {icon}
       </div>
+    <h3 className="text-lg font-semibold text-gray-800 mb-2">{title}</h3>
+    <p className="text-3xl font-bold text-gray-900 mb-1">{value}</p>
+    {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
+  </GlassCard>
+);
+
+// Modal para asignar créditos
+const CreditAssignmentModal = ({ isOpen, onClose, onAssign, selectedUser }) => {
+  const [credits, setCredits] = useState(10);
+  const [creditType, setCreditType] = useState('lead_credits');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      await onAssign(selectedUser.id, credits, creditType);
+      onClose();
+      setCredits(10);
+    } catch (error) {
+      console.error('Error asignando créditos:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 shadow-2xl">
+        <h3 className="text-xl font-bold text-gray-800 mb-6">
+          💳 Asignar Créditos a {selectedUser?.name}
+        </h3>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Tipo de Créditos
+            </label>
+            <select
+              value={creditType}
+              onChange={(e) => setCreditType(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+            >
+              <option value="lead_credits">🛒 Créditos para Comprar Leads</option>
+              <option value="ai_search_credits">🤖 Créditos de Búsqueda IA</option>
+            </select>
+            
+            {/* Descripción del tipo de crédito */}
+            <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+              {creditType === 'lead_credits' ? (
+                <p className="text-sm text-gray-600">
+                  <strong>💰 Créditos para Comprar Leads:</strong> Permite al prestamista comprar leads individuales de solicitudes de préstamo reales.
+                </p>
+              ) : (
+                <p className="text-sm text-gray-600">
+                  <strong>🤖 Créditos de Búsqueda IA:</strong> Permite usar el sistema de scraping avanzado para encontrar leads reales en sitios paraguayos.
+                </p>
+              )}
+            </div>
+          </div>
+
       <div>
-        <p className="text-sm font-medium text-gray-700 uppercase">{title}</p>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Cantidad de Créditos
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="1000"
+              value={credits}
+              onChange={(e) => setCredits(parseInt(e.target.value))}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Ej: 10"
+              required
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {creditType === 'lead_credits' 
+                ? '1 crédito = 1 lead comprable' 
+                : '1 crédito = 1 búsqueda de hasta 15 leads reales'
+              }
+            </p>
+          </div>
+
+          <div className="flex space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-3 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all disabled:opacity-50"
+            >
+              {isSubmitting ? '⏳ Asignando...' : '✅ Asignar Créditos'}
+            </button>
       </div>
+        </form>
     </div>
   </div>
 );
+};
 
 export default function AdminDashboardPage() {
-  const { user, isSuperAdmin, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
-
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
-  const [loadingData, setLoadingData] = useState(true);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [loadingAssign, setLoadingAssign] = useState(false);
-  const [showCreditModal, setShowCreditModal] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [creditsToAdd, setCreditsToAdd] = useState('');
+  const [showCreditModal, setShowCreditModal] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    if (!authLoading && !isSuperAdmin) {
+  // Verificar que sea superadmin
+  useEffect(() => {
+    if (!user) return;
+    
+    if (user.user_type !== 'superadmin') {
+      toast.error('Acceso denegado. Solo SuperAdmins pueden acceder.');
       router.push('/dashboard');
       return;
     }
+  }, [user, router]);
 
-    if (isSuperAdmin) {
-      try {
-        setLoadingData(true);
-        const [statsResponse, usersResponse] = await Promise.all([
-          api.get('/admin/stats'),
-          api.get('/admin/users')
-        ]);
-        setStats(statsResponse.data);
-        setUsers(usersResponse.data.users || []);
-        setError('');
-      } catch (err) {
-        setError('Error al cargar los datos del dashboard.');
-        console.error(err);
-      } finally {
-        setLoadingData(false);
+  // Cargar estadísticas con manejo de errores mejorado
+  const loadStats = useCallback(async () => {
+    try {
+      console.log('🔍 Cargando estadísticas...');
+      const response = await api.get('/admin/stats');
+      console.log('📊 Estadísticas recibidas:', response.data);
+      
+      // Si hay error pero también datos de fallback
+      if (response.data.error && response.data.fallback_data) {
+        console.warn('⚠️ Usando datos de fallback:', response.data.fallback_data);
+        setStats(response.data.fallback_data);
+        toast.warning('Algunas estadísticas no están disponibles');
+      } else {
+        setStats(response.data);
       }
-    }
-  }, [user, isSuperAdmin, authLoading, router]);
-
-  useEffect(() => {
-    if (isSuperAdmin) {
-      fetchData();
-    }
-  }, [isSuperAdmin, fetchData]);
-
-  // Mostrar un spinner mientras se verifica la autenticación
-  if (authLoading || !isSuperAdmin) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinner text="Verificando acceso..." />
-      </div>
-    );
-  }
-
-  if (loadingData || !stats) {
-     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinner text="Cargando datos del dashboard..." />
-      </div>
-    );
-  }
-
-  const handleToggleUserStatus = async (userId, currentStatus) => {
-    const action = currentStatus ? 'desactivar' : 'activar';
-    const confirmMessage = `¿Estás seguro de que quieres ${action} este usuario?`;
-    
-    if (!window.confirm(confirmMessage)) return;
-
-    try {
-      setError('');
-      const response = await api.patch(`/admin/users/${userId}/toggle-status`);
-      
-      // Actualizar el usuario en el estado local
-      setUsers(users.map(u => 
-        u.id === userId 
-          ? { ...u, is_active: response.data.user.is_active }
-          : u
-      ));
-      
-      setSuccessMessage(response.data.message);
-      setTimeout(() => setSuccessMessage(''), 3000); // Limpiar mensaje después de 3 segundos
-      
-    } catch (err) {
-      setError(err.response?.data?.error || 'Error al cambiar el estado del usuario');
-    }
-  };
-
-  const handleDeleteUser = async (userId, userName) => {
-    const confirmMessage = `¿Estás COMPLETAMENTE SEGURO de que quieres ELIMINAR PERMANENTEMENTE al usuario "${userName}"?\n\nEsta acción NO se puede deshacer.`;
-    
-    if (!window.confirm(confirmMessage)) return;
-
-    try {
-      setError('');
-      await api.delete(`/admin/users/${userId}`);
-      
-      // Remover el usuario del estado local
-      setUsers(users.filter(u => u.id !== userId));
-      
-      // Actualizar las estadísticas
-      setStats(prev => ({ ...prev, totalUsers: prev.totalUsers - 1 }));
-      
-      setSuccessMessage('Usuario eliminado exitosamente');
-      setTimeout(() => setSuccessMessage(''), 3000);
-      
-    } catch (err) {
-      setError(err.response?.data?.error || 'Error al eliminar el usuario');
-    }
-  };
-
-  const handleAssignLeads = async () => {
-    if (stats.unassignedLeads === 0) {
-      setError("No hay leads pendientes para asignar.");
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
-    const confirmMessage = `¿Estás seguro de que quieres asignar ${stats.unassignedLeads} leads de forma aleatoria?`;
-    if (!window.confirm(confirmMessage)) return;
-
-    setLoadingAssign(true);
-    setError('');
-    setSuccessMessage('');
-
-    try {
-      const response = await api.post('/admin/leads/assign');
-      setSuccessMessage(response.data.message);
-      await fetchData(); // Recargar todos los datos
-    } catch (err) {
-      setError(err.response?.data?.error || 'Ocurrió un error al asignar los leads.');
-    } finally {
-      setLoadingAssign(false);
-      setTimeout(() => setSuccessMessage(''), 4000);
-    }
-  };
-
-  const handleAssignCredits = async () => {
-    if (!selectedUser || !creditsToAdd || creditsToAdd <= 0) {
-      toast.error('Por favor, ingresa una cantidad válida de créditos');
-      return;
-    }
-
-    try {
-      const response = await api.post(`/admin/users/${selectedUser.id}/credits`, { credits: parseInt(creditsToAdd) });
-      toast.success(response.data.message);
-      setShowCreditModal(false);
-      setSelectedUser(null);
-      setCreditsToAdd('');
-      await fetchData(); // Recargar datos
     } catch (error) {
-      console.error('Error al asignar créditos:', error);
-      toast.error(error.response?.data?.error || 'Error al asignar créditos');
+      console.error('❌ Error cargando estadísticas:', error);
+      
+      // Estadísticas por defecto si falla completamente
+      setStats({
+        users: { total: 0, lenders: 0, borrowers: 0, active: 0 },
+        credits: { total_lead_credits: 0, total_ai_credits: 0 },
+        loans: { total_requests: 0, active: 0, pending: 0 },
+        leads: { total: 0, new: 0 },
+        financial: { total_amount_requested: 0, avg_loan_amount: 0 }
+      });
+      
+      toast.error('Error cargando estadísticas');
+    }
+  }, []);
+
+  // Cargar usuarios
+  const loadUsers = useCallback(async () => {
+    try {
+      console.log('🔍 Cargando usuarios...');
+      const response = await api.get('/admin/users');
+      console.log('👥 Respuesta completa de usuarios:', response.data);
+      console.log('👥 Array de usuarios:', response.data.users);
+      
+      // Verificar cada usuario
+      response.data.users?.forEach((user, index) => {
+        console.log(`👤 Usuario ${index}:`, {
+          name: `${user.first_name} ${user.last_name}`,
+          type: user.user_type,
+          lender_profile: user.lender_profile,
+          lead_credits: user.lender_profile?.lead_credits,
+          ai_credits: user.lender_profile?.ai_search_credits
+        });
+      });
+      
+      setUsers(response.data.users || []);
+    } catch (error) {
+      console.error('❌ Error cargando usuarios:', error);
+      toast.error('Error cargando usuarios');
+    }
+  }, []);
+
+  // Cargar datos iniciales
+  useEffect(() => {
+    console.log('🔍 User state:', user);
+    console.log('🔍 User type:', user?.user_type);
+    
+    const loadData = async () => {
+      if (!user || user.user_type !== 'superadmin') {
+        console.log('❌ No es superadmin o user no definido');
+        return;
+      }
+      
+      console.log('✅ Es superadmin, cargando datos...');
+      setLoading(true);
+      
+      try {
+        console.log('📡 Iniciando carga de stats...');
+        await loadStats();
+        console.log('📡 Iniciando carga de users...');
+        await loadUsers();
+        console.log('✅ Datos cargados exitosamente');
+      } catch (error) {
+        console.error('❌ Error cargando datos:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+  }, [user, loadStats, loadUsers]);
+
+  // Asignar créditos
+  const handleAssignCredits = async (userId, credits, creditType = 'lead_credits') => {
+    try {
+      console.log(`🎯 Asignando ${credits} créditos de tipo ${creditType} al usuario ${userId}`);
+      const response = await api.post(`/admin/users/${userId}/credits`, { 
+        credits, 
+        credit_type: creditType 
+      });
+      console.log('✅ Respuesta:', response.data);
+      
+      const creditName = creditType === 'lead_credits' ? 'créditos para comprar leads' : 'créditos de búsqueda IA';
+      toast.success(`✅ ${credits} ${creditName} asignados exitosamente`);
+      
+      await loadUsers(); // Recargar lista de usuarios
+    } catch (error) {
+      console.error('❌ Error asignando créditos:', error);
+      toast.error(`❌ Error: ${error.response?.data?.error || 'Error asignando créditos'}`);
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('es-PY', {
-      style: 'currency',
-      currency: 'PYG',
-      minimumFractionDigits: 0,
-    }).format(amount);
+  // Alternar estado del usuario
+  const handleToggleUserStatus = async (userId, currentStatus) => {
+    try {
+      const response = await api.patch(`/admin/users/${userId}/toggle-status`);
+      toast.success(`Usuario ${currentStatus ? 'desactivado' : 'activado'} exitosamente`);
+      await loadUsers();
+    } catch (error) {
+      console.error('Error actualizando usuario:', error);
+      toast.error(`Error: ${error.response?.data?.error || 'Error actualizando usuario'}`);
+    }
+  };
+
+  // Eliminar usuario
+  const handleDeleteUser = async (userId, userName) => {
+    if (!confirm(`¿Estás seguro de eliminar al usuario ${userName}?`)) return;
+
+    try {
+      await api.delete(`/admin/users/${userId}`);
+      toast.success('Usuario eliminado exitosamente');
+      await loadUsers();
+    } catch (error) {
+      console.error('Error eliminando usuario:', error);
+      toast.error(`Error: ${error.response?.data?.error || 'Error eliminando usuario'}`);
+    }
   };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('es-PY');
   };
 
+  // Función para formatear moneda
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('es-PY', {
+      style: 'currency',
+      currency: 'PYG',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  if (!user || user.user_type !== 'superadmin') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Verificando acceso..." />
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Cargando dashboard..." />
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      <h1 className="text-3xl font-bold text-gray-900">Dashboard de Administrador</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8">
+      <div className="container mx-auto px-4 max-w-7xl">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+            Dashboard SuperAdmin
+          </h1>
+          <p className="text-gray-600">
+            Panel de control y administración del sistema
+          </p>
+        </div>
 
-      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mb-6">{error}</div>}
-      {successMessage && <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl relative mb-6">{successMessage}</div>}
+        {/* Estadísticas Generales */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+            <StatCard
+              title="Total Usuarios"
+              value={stats.users?.total || 0}
+              subtitle={`${stats.users?.active || 0} activos`}
+              icon={<FiUsers className="w-6 h-6" />}
+              color="bg-gradient-to-r from-blue-500 to-purple-600"
+            />
+            <StatCard
+              title="Prestamistas"
+              value={stats.users?.lenders || 0}
+              subtitle={`${stats.credits?.lenders_with_credits || 0} con créditos`}
+              icon={<FiDollarSign className="w-6 h-6" />}
+              color="bg-gradient-to-r from-green-500 to-emerald-600"
+            />
+            <StatCard
+              title="Prestatarios"
+              value={stats.users?.borrowers || 0}
+              subtitle={`${stats.loans?.total_requests || 0} solicitudes`}
+              icon={<FiCheckSquare className="w-6 h-6" />}
+              color="bg-gradient-to-r from-orange-500 to-red-600"
+            />
+            <StatCard
+              title="Créditos Leads"
+              value={stats.credits?.total_lead_credits || 0}
+              subtitle="Para comprar leads"
+              icon={<FiCreditCard className="w-6 h-6" />}
+              color="bg-gradient-to-r from-purple-500 to-pink-600"
+            />
+            <StatCard
+              title="Créditos IA"
+              value={stats.credits?.total_ai_credits || 0}
+              subtitle="Para búsquedas"
+              icon={<FiZap className="w-6 h-6" />}
+              color="bg-gradient-to-r from-indigo-500 to-blue-600"
+            />
+          </div>
+        )}
 
-      {/* Sección de Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <StatCard title="Total Usuarios" value={stats.totalUsers} icon={<FiUsers size={24} />} color="bg-blue-100" />
-        <StatCard title="Préstamos" value={stats.totalLoans} icon={<FiDollarSign size={24} />} color="bg-green-100" />
-        <StatCard title="Aprobados" value={stats.approvedLoans} icon={<FiCheckSquare size={24} />} color="bg-purple-100" />
-        <StatCard title="Pendientes" value={stats.pendingLoans} icon={<FiAlertTriangle size={24} />} color="bg-yellow-100" />
-        <StatCard title="Leads sin Asignar" value={stats.unassignedLeads} icon={<FiZap size={24} />} color="bg-orange-100" />
+        {/* Agregar una sección de estadísticas detalladas */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* Resumen Financiero */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">💰 Resumen Financiero</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total solicitado:</span>
+                  <span className="font-semibold">{formatCurrency(stats.financial?.total_amount_requested || 0)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Promedio por préstamo:</span>
+                  <span className="font-semibold">{formatCurrency(stats.financial?.avg_loan_amount || 0)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Préstamos activos:</span>
+                  <span className="font-semibold text-green-600">{stats.loans?.active || 0}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Distribución de Créditos */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">📊 Distribución de Créditos</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Créditos para leads:</span>
+                  <span className="font-semibold text-purple-600">{stats.credits?.total_lead_credits || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Créditos IA:</span>
+                  <span className="font-semibold text-blue-600">{stats.credits?.total_ai_credits || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Prestamistas activos:</span>
+                  <span className="font-semibold text-green-600">{stats.credits?.lenders_with_credits || 0}</span>
+                </div>
+              </div>
       </div>
 
-      {/* Acción de Asignar Leads */}
-      <div className="card">
-        <div className="flex flex-col md:flex-row items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-gray-800 flex items-center">
-              <FiShare2 className="mr-3 text-primary-600" />
-              Asignación de Leads
-            </h2>
-            <p className="text-gray-600 mt-1 pl-8">
-              Distribuye todos los leads sin asignar de forma aleatoria entre los prestamistas activos.
-            </p>
+            {/* Activity Summary */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">⚡ Actividad Reciente</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Leads disponibles:</span>
+                  <span className="font-semibold text-orange-600">{stats.leads?.total || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Leads nuevos:</span>
+                  <span className="font-semibold text-red-600">{stats.leads?.new || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Préstamos pendientes:</span>
+                  <span className="font-semibold text-yellow-600">{stats.loans?.pending || 0}</span>
+                </div>
+              </div>
+            </div>
           </div>
+        )}
+
+        {/* Lista de Usuarios */}
+        <div className="bg-white rounded-2xl shadow-xl p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">Gestión de Usuarios</h2>
           <button
-            onClick={handleAssignLeads}
-            disabled={loadingAssign || stats.unassignedLeads === 0}
-            className="btn-primary mt-4 md:mt-0 w-full md:w-auto flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none"
-          >
-            {loadingAssign ? (
-              <LoadingSpinner size="sm" text="Asignando..." />
-            ) : (
-              <>
-                Asignar {stats.unassignedLeads} Leads
-              </>
-            )}
+              onClick={() => {
+                loadUsers();
+                loadStats();
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
+            >
+              🔄 Actualizar
           </button>
         </div>
-      </div>
 
-      {/* Tabla de usuarios */}
-      <div className="card">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">Gestión de Usuarios</h2>
+          {users.length === 0 ? (
+            <div className="text-center py-12">
+              <FiUsers className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-gray-500 text-lg">No hay usuarios registrados</p>
+              <button
+                onClick={loadUsers}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Recargar Datos
+              </button>
+      </div>
+          ) : (
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Créditos</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-2 font-semibold text-gray-700">Usuario</th>
+                    <th className="text-left py-3 px-2 font-semibold text-gray-700">Tipo</th>
+                    <th className="text-left py-3 px-2 font-semibold text-gray-700">Créditos IA</th>
+                    <th className="text-left py-3 px-2 font-semibold text-gray-700">Estado</th>
+                    <th className="text-left py-3 px-2 font-semibold text-gray-700">Registro</th>
+                    <th className="text-center py-3 px-2 font-semibold text-gray-700">Acciones</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{u.first_name} {u.last_name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      u.user_type === 'superadmin' ? 'bg-red-100 text-red-800' :
-                      u.user_type === 'lender' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                    }`}>
-                      {u.user_type}
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-2">
+                        <div>
+                          <div className="font-medium text-gray-800">
+                            {user.first_name} {user.last_name}
+                          </div>
+                          <div className="text-sm text-gray-600">{user.email}</div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-2">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          user.user_type === 'lender' 
+                            ? 'bg-green-100 text-green-800' 
+                            : user.user_type === 'borrower' 
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {user.user_type === 'lender' ? '💰 Prestamista' : user.user_type === 'borrower' ? '🏦 Prestatario' : '👑 SuperAdmin'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {u.user_type === 'lender' && u.lender_profile ? (
+                      <td className="py-3 px-2">
+                        {user.user_type === 'lender' ? (
+                          <div className="text-sm space-y-1">
+                            <div className="flex items-center">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                                🛒 {user.lender_profile?.lead_credits || 0} leads
+                              </span>
+                            </div>
                       <div className="flex items-center">
-                        <span className="font-medium text-green-600 mr-2">
-                          {u.lender_profile.ai_search_credits}
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                🤖 {user.lender_profile?.ai_search_credits || 0} IA
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">N/A</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-2">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {user.is_active ? '✅ Activo' : '❌ Inactivo'}
                         </span>
+                      </td>
+                      <td className="py-3 px-2 text-sm text-gray-600">
+                        {formatDate(user.created_at)}
+                      </td>
+                      <td className="py-3 px-2">
+                        <div className="flex space-x-2 justify-center">
+                          {/* Botón Asignar Créditos */}
+                          {user.user_type === 'lender' && (
                         <button
                           onClick={() => {
-                            setSelectedUser(u);
+                                setSelectedUser({
+                                  id: user.id,
+                                  name: `${user.first_name} ${user.last_name}`
+                                });
                             setShowCreditModal(true);
                           }}
-                          className="text-green-600 hover:text-green-800"
-                          title="Asignar créditos"
+                              className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-all"
+                              title="Asignar Créditos"
                         >
-                          <FiCreditCard className="h-4 w-4" />
+                              <FiCreditCard className="inline w-3 h-3 mr-1" />
+                              Créditos
                         </button>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">N/A</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {u.is_active ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
-                    {u.user_type !== 'superadmin' && (
-                      <>
+                          )}
+                          
+                          {/* Botón Activar/Desactivar */}
+                          {user.user_type !== 'superadmin' && (
                         <button
-                          onClick={() => handleToggleUserStatus(u.id, u.is_active)}
-                          className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${
-                            u.is_active 
-                              ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' 
-                              : 'bg-green-100 text-green-800 hover:bg-green-200'
-                          }`}
-                        >
-                          {u.is_active ? <FiToggleRight className="mr-1" /> : <FiToggleLeft className="mr-1" />}
-                          {u.is_active ? 'Desactivar' : 'Activar'}
+                              onClick={() => handleToggleUserStatus(user.id, user.is_active)}
+                              className={`px-3 py-1 text-xs rounded transition-all ${
+                                user.is_active 
+                                  ? 'bg-red-500 hover:bg-red-600 text-white' 
+                                  : 'bg-green-500 hover:bg-green-600 text-white'
+                              }`}
+                            >
+                              {user.is_active ? (
+                                <>
+                                  <FiToggleRight className="inline w-3 h-3 mr-1" />
+                                  Desactivar
+                                </>
+                              ) : (
+                                <>
+                                  <FiToggleLeft className="inline w-3 h-3 mr-1" />
+                                  Activar
+                                </>
+                              )}
                         </button>
+                          )}
                         
+                          {/* Botón Eliminar */}
+                          {user.user_type !== 'superadmin' && (
                         <button
-                          onClick={() => handleDeleteUser(u.id, `${u.first_name} ${u.last_name}`)}
-                          className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200"
+                              onClick={() => handleDeleteUser(user.id, `${user.first_name} ${user.last_name}`)}
+                              className="px-3 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded transition-all"
+                              title="Eliminar Usuario"
                         >
-                          <FiTrash2 className="mr-1" />
+                              <FiTrash2 className="inline w-3 h-3 mr-1" />
                           Eliminar
                         </button>
-                      </>
                     )}
-                    {u.user_type === 'superadmin' && (
-                      <span className="text-gray-400 text-xs">Sin acciones</span>
-                    )}
+                        </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+          )}
       </div>
 
-      {/* Modal para asignar créditos */}
-      {showCreditModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Asignar Créditos
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Usuario: <strong>{selectedUser.first_name} {selectedUser.last_name}</strong>
-            </p>
-            <p className="text-gray-600 mb-4">
-              Créditos actuales: <strong>{selectedUser.lender_profile?.ai_search_credits || 0}</strong>
-            </p>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Créditos a agregar:
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={creditsToAdd}
-                onChange={(e) => setCreditsToAdd(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="Ej: 10"
+        {/* Modal para Asignar Créditos */}
+        <CreditAssignmentModal
+          isOpen={showCreditModal}
+          onClose={() => setShowCreditModal(false)}
+          onAssign={handleAssignCredits}
+          selectedUser={selectedUser}
               />
             </div>
-            
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => {
-                  setShowCreditModal(false);
-                  setSelectedUser(null);
-                  setCreditsToAdd('');
-                }}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleAssignCredits}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-              >
-                Asignar Créditos
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 } 

@@ -1,7 +1,75 @@
+import { Inter } from 'next/font/google';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '../context/AuthContext';
 import AppShell from './AppShell';
-import { Toaster } from 'react-hot-toast';
 import '../styles/globals.css';
+
+const inter = Inter({ subsets: ['latin'] });
+
+// METADATA PARA SEO
+export const metadata = {
+  title: {
+    template: '%s | Prestame - Educación Financiera',
+    default: 'Prestame - Tu Guía Hacia el Bienestar Financiero en Paraguay',
+  },
+  description: 'Aprende a manejar tus finanzas, mejora tu score crediticio con IA y accede a las mejores oportunidades de inversión y préstamos en Paraguay.',
+  metadataBase: new URL('https://www.prestame.com.py'), // Reemplaza con tu dominio real
+  openGraph: {
+    title: 'Prestame - Educación Financiera',
+    description: 'Más que préstamos, te damos el conocimiento para que tomes el control de tu futuro financiero.',
+    url: 'https://www.prestame.com.py', // Tu dominio real
+    siteName: 'Prestame',
+    images: [
+      {
+        url: '/og-image.jpg', // Crea esta imagen (1200x630px) y ponla en /public
+        width: 1200,
+        height: 630,
+      },
+    ],
+    locale: 'es_PY',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Prestame - Tu Guía Financiera',
+    description: 'Aprende, mejora tu score con IA y accede a las mejores oportunidades financieras en Paraguay.',
+    images: ['/og-image.jpg'], // La misma imagen
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  icons: {
+    icon: '/favicon.ico', // Asegúrate de tener un favicon
+    apple: '/apple-touch-icon.png',
+  },
+};
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FinancialService',
+  name: 'Prestame',
+  url: 'https://www.prestame.com.py', // Tu dominio real
+  logo: 'https://www.prestame.com.py/logo.png', // Tu logo
+  description: 'Plataforma de Educación Financiera y Préstamos P2P en Paraguay.',
+  address: {
+    '@type': 'PostalAddress',
+    addressCountry: 'PY',
+    addressLocality: 'Asunción', // Tu ciudad
+  },
+  contactPoint: {
+    '@type': 'ContactPoint',
+    telephone: '+595-XXX-XXXXXX', // Tu teléfono
+    contactType: 'Customer Service',
+  },
+};
 
 export default function RootLayout({ children }) {
   return (
@@ -11,13 +79,15 @@ export default function RootLayout({ children }) {
         <meta name="description" content="Conectamos personas que necesitan préstamos con prestamistas" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
-      <body>
+      <body className={inter.className}>
+        <Toaster position="top-center" reverseOrder={false} />
         <AuthProvider>
-          <AppShell>
-            {children}
-          </AppShell>
-          <Toaster position="top-right" />
+          <AppShell>{children}</AppShell>
         </AuthProvider>
       </body>
     </html>

@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { authService } from '../services/api';
 import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 const AuthContext = createContext();
 
@@ -95,37 +96,53 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
+      setLoading(true);
       const { data } = await authService.login(credentials);
-      // El backend devuelve 'access_token', no 'token'
-      const accessToken = data.access_token;
-      localStorage.setItem('token', accessToken);
+      localStorage.setItem('token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      setToken(accessToken);
+      setToken(data.access_token);
       setUser(data.user);
       await fetchUserProfile();
-      return { success: true };
+      
+      toast.success('¡Bienvenido de nuevo!');
+      
+      // Redirigir al dashboard correspondiente
+      if (data.user.role === 'superadmin') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
+      
     } catch (error) {
-      console.error('Error en login:', error);
-      const errorMessage = error.response?.data?.error || 'Error al iniciar sesión';
-      return { success: false, error: errorMessage };
+      console.error("Error en login:", error);
+      toast.error(error.response?.data?.error || 'Error al iniciar sesión');
+      logout(); // Limpiar estado en caso de error
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const register = async (userData) => {
     try {
-      const { data } = await authService.register(userData);
-      // El backend devuelve 'access_token', no 'token'
-      const accessToken = data.access_token;
-      localStorage.setItem('token', accessToken);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      setToken(accessToken);
-      setUser(data.user);
-      await fetchUserProfile();
-      return { success: true };
+      setLoading(true);
+      // Paso 1: Registrar al usuario
+      await authService.register(userData);
+      
+      toast.success('¡Registro exitoso! Iniciando sesión...');
+      
+      // ✅ PASO CLAVE: Iniciar sesión automáticamente después del registro
+      await login({ email: userData.email, password: userData.password });
+
+      // La redirección ya la maneja la función login()
+
     } catch (error) {
-      console.error('Error en registro:', error);
-      const errorMessage = error.response?.data?.error || 'Error al registrarse';
-      return { success: false, error: errorMessage };
+      console.error("Error en registro:", error);
+      toast.error(error.response?.data?.error || 'Error al registrarse. Intenta con otro email.');
+      logout(); // Limpiar por si acaso
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 

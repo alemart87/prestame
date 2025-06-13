@@ -58,7 +58,12 @@ def get_all_users():
         if not is_superadmin():
             return jsonify({'error': 'No autorizado. Debe ser superadmin.'}), 403
         
-        users = User.query.all()
+        # CAMBIO: Usar joinedload para cargar los perfiles automáticamente
+        users = db.session.query(User).options(
+            db.joinedload(User.lender_profile),
+            db.joinedload(User.borrower_profile)
+        ).all()
+        
         users_data = []
         
         for user in users:
@@ -72,23 +77,36 @@ def get_all_users():
                 'created_at': user.created_at.isoformat() if user.created_at else None
             }
             
-            # Agregar información específica según el tipo de usuario
-            if user.user_type == 'lender' and user.lender_profile:
-                user_data['lender_profile'] = {
-                    'ai_search_credits': user.lender_profile.ai_search_credits,
-                    'current_package': user.lender_profile.current_package,
-                    'leads_remaining': user.lender_profile.leads_remaining,
-                    'total_loans_funded': user.lender_profile.total_loans_funded
-                }
+            # MEJORADO: Agregar información de perfiles con valores por defecto
+            if user.user_type == 'lender':
+                if user.lender_profile:
+                    user_data['lender_profile'] = {
+                        'id': user.lender_profile.id,
+                        'lead_credits': user.lender_profile.lead_credits or 0,
+                        'ai_search_credits': user.lender_profile.ai_search_credits or 0,
+                        'subscription_status': user.lender_profile.subscription_status,
+                        'current_package': user.lender_profile.current_package
+                    }
+                else:
+                    # Crear perfil si no existe
+                    user_data['lender_profile'] = {
+                        'id': None,
+                        'lead_credits': 0,
+                        'ai_search_credits': 0,
+                        'subscription_status': None,
+                        'current_package': None
+                    }
             elif user.user_type == 'borrower' and user.borrower_profile:
                 user_data['borrower_profile'] = {
+                    'id': user.borrower_profile.id,
                     'monthly_income': user.borrower_profile.monthly_income,
                     'employment_status': user.borrower_profile.employment_status,
-                    'score': user.borrower_profile.score
+                    'score': user.borrower_profile.score or 0
                 }
             
             users_data.append(user_data)
         
+        logger.info(f"Devolviendo {len(users_data)} usuarios con perfiles")
         return jsonify({
             'users': users_data,
             'total': len(users_data)
@@ -96,7 +114,9 @@ def get_all_users():
         
     except Exception as e:
         logger.error(f"Error obteniendo usuarios: {str(e)}")
-        return jsonify({'error': 'Error interno del servidor'}), 500
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': 'Error interno del servidor', 'details': str(e)}), 500
 
 @admin_bp.route('/users/<int:user_id>/toggle-status', methods=['PATCH'])
 @admin_required()
@@ -219,16 +239,20 @@ def sync_stripe():
 @admin_bp.route('/users/<int:user_id>/credits', methods=['POST'])
 @jwt_required()
 def assign_credits(user_id):
-    """Asignar créditos de búsqueda a un prestamista (solo superadmin)"""
+    """Asignar créditos de leads a un prestamista (solo superadmin)"""
     try:
         if not is_superadmin():
             return jsonify({'error': 'No autorizado. Debe ser superadmin.'}), 403
         
         data = request.get_json()
         credits_to_add = data.get('credits', 0)
+        credit_type = data.get('credit_type', 'lead_credits')  # CAMBIO: por defecto lead_credits
         
         if not isinstance(credits_to_add, int) or credits_to_add <= 0:
             return jsonify({'error': 'Los créditos deben ser un número entero positivo'}), 400
+        
+        if credit_type not in ['ai_search_credits', 'lead_credits']:
+            return jsonify({'error': 'Tipo de crédito no válido'}), 400
         
         # Buscar usuario
         user = User.query.get(user_id)
@@ -241,27 +265,42 @@ def assign_credits(user_id):
         # Buscar o crear perfil de prestamista
         lender_profile = LenderProfile.query.filter_by(user_id=user.id).first()
         if not lender_profile:
-            return jsonify({'error': 'Perfil de prestamista no encontrado'}), 404
+            # CREAR perfil de prestamista si no existe
+            lender_profile = LenderProfile(
+                user_id=user.id,
+                lead_credits=0,
+                ai_search_credits=0
+            )
+            db.session.add(lender_profile)
+            db.session.flush()  # Para obtener el ID
         
-        # Agregar créditos
-        old_credits = lender_profile.ai_search_credits
-        lender_profile.ai_search_credits += credits_to_add
+        # Agregar créditos según el tipo
+        if credit_type == 'ai_search_credits':
+            old_credits = lender_profile.ai_search_credits
+            lender_profile.ai_search_credits += credits_to_add
+            new_credits = lender_profile.ai_search_credits
+        else:  # lead_credits - ESTE ES EL IMPORTANTE PARA COMPRAR LEADS
+            old_credits = lender_profile.lead_credits
+            lender_profile.lead_credits += credits_to_add
+            new_credits = lender_profile.lead_credits
         
         db.session.commit()
         
-        logger.info(f"SuperAdmin asignó {credits_to_add} créditos a usuario {user.email}")
+        credit_name = "créditos de búsqueda IA" if credit_type == 'ai_search_credits' else "créditos para comprar leads"
+        logger.info(f"SuperAdmin asignó {credits_to_add} {credit_name} a usuario {user.email}")
         
         return jsonify({
-            'message': f'Se asignaron {credits_to_add} créditos exitosamente',
+            'message': f'Se asignaron {credits_to_add} {credit_name} exitosamente',
             'user': {
                 'id': user.id,
                 'email': user.email,
                 'name': f'{user.first_name} {user.last_name}'
             },
             'credits': {
+                'type': credit_type,
                 'previous': old_credits,
                 'added': credits_to_add,
-                'total': lender_profile.ai_search_credits
+                'total': new_credits
             }
         }), 200
         
@@ -278,41 +317,101 @@ def get_admin_stats():
         if not is_superadmin():
             return jsonify({'error': 'No autorizado. Debe ser superadmin.'}), 403
         
-        # Estadísticas de usuarios
-        total_users = User.query.count()
-        lenders_count = User.query.filter_by(user_type='lender').count()
-        borrowers_count = User.query.filter_by(user_type='borrower').count()
+        logger.info("Iniciando cálculo de estadísticas...")
         
-        # Estadísticas de leads
-        total_leads = Lead.query.count()
-        new_leads = Lead.query.filter_by(status='new').count()
+        # 1. Estadísticas básicas de usuarios (más seguro)
+        try:
+            total_users = db.session.query(User).count()
+            lenders_count = db.session.query(User).filter(User.user_type == 'lender').count()
+            borrowers_count = db.session.query(User).filter(User.user_type == 'borrower').count()
+            active_users = db.session.query(User).filter(User.is_active == True).count()
+            logger.info(f"Usuarios: total={total_users}, lenders={lenders_count}, borrowers={borrowers_count}")
+        except Exception as user_error:
+            logger.error(f"Error calculando usuarios: {str(user_error)}")
+            total_users = lenders_count = borrowers_count = active_users = 0
         
-        # Estadísticas de créditos
-        total_credits = db.session.query(db.func.sum(LenderProfile.ai_search_credits)).scalar() or 0
+        # 2. Estadísticas de créditos (simplificado)
+        try:
+            # Obtener todos los perfiles de prestamistas
+            lender_profiles = db.session.query(LenderProfile).all()
+            total_lead_credits = sum(profile.lead_credits for profile in lender_profiles)
+            total_ai_credits = sum(profile.ai_search_credits for profile in lender_profiles)
+            lenders_with_credits = len([p for p in lender_profiles if p.lead_credits > 0])
+            lenders_with_ai_credits = len([p for p in lender_profiles if p.ai_search_credits > 0])
+            logger.info(f"Créditos: lead={total_lead_credits}, ai={total_ai_credits}")
+        except Exception as credit_error:
+            logger.error(f"Error calculando créditos: {str(credit_error)}")
+            total_lead_credits = total_ai_credits = lenders_with_credits = lenders_with_ai_credits = 0
         
-        # Estadísticas de préstamos
-        total_loan_requests = LoanRequest.query.count()
-        active_loans = LoanRequest.query.filter_by(status='active').count()
+        # 3. Estadísticas de préstamos (simplificado)
+        try:
+            total_loan_requests = db.session.query(LoanRequest).count()
+            active_loans = db.session.query(LoanRequest).filter(LoanRequest.status == 'active').count()
+            pending_loans = db.session.query(LoanRequest).filter(LoanRequest.status == 'pending').count()
+            logger.info(f"Préstamos: total={total_loan_requests}, active={active_loans}")
+        except Exception as loan_error:
+            logger.error(f"Error calculando préstamos: {str(loan_error)}")
+            total_loan_requests = active_loans = pending_loans = 0
         
-        return jsonify({
+        # 4. Estadísticas financieras (opcional)
+        try:
+            amounts = db.session.query(LoanRequest.amount).filter(LoanRequest.amount != None).all()
+            total_amount_requested = sum(amount[0] for amount in amounts) if amounts else 0
+            avg_loan_amount = total_amount_requested / len(amounts) if amounts else 0
+        except Exception as financial_error:
+            logger.warning(f"Error calculando estadísticas financieras: {str(financial_error)}")
+            total_amount_requested = avg_loan_amount = 0
+        
+        # 5. Estadísticas de leads (opcional - puede fallar sin problema)
+        try:
+            from app.models.lead import Lead
+            total_leads = db.session.query(Lead).count()
+            new_leads = db.session.query(Lead).filter(Lead.status == 'new').count()
+        except:
+            total_leads = new_leads = 0
+        
+        # Construir respuesta
+        response_data = {
             'users': {
                 'total': total_users,
                 'lenders': lenders_count,
-                'borrowers': borrowers_count
+                'borrowers': borrowers_count,
+                'active': active_users
+            },
+            'credits': {
+                'total_lead_credits': total_lead_credits,
+                'total_ai_credits': total_ai_credits,
+                'lenders_with_credits': lenders_with_credits,
+                'lenders_with_ai_credits': lenders_with_ai_credits
+            },
+            'loans': {
+                'total_requests': total_loan_requests,
+                'active': active_loans,
+                'pending': pending_loans
             },
             'leads': {
                 'total': total_leads,
                 'new': new_leads
             },
-            'credits': {
-                'total_distributed': total_credits
-            },
-            'loans': {
-                'total_requests': total_loan_requests,
-                'active': active_loans
+            'financial': {
+                'total_amount_requested': total_amount_requested,
+                'avg_loan_amount': avg_loan_amount
             }
-        }), 200
+        }
+        
+        logger.info(f"Estadísticas calculadas exitosamente: {response_data}")
+        return jsonify(response_data), 200
         
     except Exception as e:
-        logger.error(f"Error obteniendo estadísticas: {str(e)}")
-        return jsonify({'error': 'Error interno del servidor'}), 500 
+        logger.error(f"Error general obteniendo estadísticas: {str(e)}")
+        import traceback
+        logger.error(f"Traceback completo: {traceback.format_exc()}")
+        
+        # Devolver estadísticas vacías pero funcionales
+        return jsonify({
+            'users': {'total': 0, 'lenders': 0, 'borrowers': 0, 'active': 0},
+            'credits': {'total_lead_credits': 0, 'total_ai_credits': 0, 'lenders_with_credits': 0, 'lenders_with_ai_credits': 0},
+            'loans': {'total_requests': 0, 'active': 0, 'pending': 0},
+            'leads': {'total': 0, 'new': 0},
+            'financial': {'total_amount_requested': 0, 'avg_loan_amount': 0}
+        }), 200 
