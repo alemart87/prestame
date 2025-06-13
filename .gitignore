@@ -84,11 +84,6 @@ test_*.py
 debug_*.py
 temp_*.py
 
-# Archivos de configuración sensibles
-config.py
-local_config.py
-production_config.py
-
 # Archivos de respaldo de base de datos
 *.sql
 *.dump
