@@ -2,6 +2,7 @@ import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '../context/AuthContext';
 import AppShell from './AppShell';
+import { AIScoreButton, AIWowEffect } from '../components/AIComponents';
 import '../styles/globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -13,15 +14,15 @@ export const metadata = {
     default: 'Prestame - Tu Guía Hacia el Bienestar Financiero en Paraguay',
   },
   description: 'Aprende a manejar tus finanzas, mejora tu score crediticio con IA y accede a las mejores oportunidades de inversión y préstamos en Paraguay.',
-  metadataBase: new URL('https://prestame-frontend.onrender.com'), // ✅ Cambiar cuando tengas la URL del frontend
+  metadataBase: new URL('https://prestame-frontend.onrender.com'),
   openGraph: {
     title: 'Prestame - Educación Financiera',
     description: 'Más que préstamos, te damos el conocimiento para que tomes el control de tu futuro financiero.',
-    url: 'https://www.prestame.com.py', // Tu dominio real
+    url: 'https://www.prestame.com.py',
     siteName: 'Prestame',
     images: [
       {
-        url: '/og-image.jpg', // Crea esta imagen (1200x630px) y ponla en /public
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
       },
@@ -33,7 +34,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'Prestame - Tu Guía Financiera',
     description: 'Aprende, mejora tu score con IA y accede a las mejores oportunidades financieras en Paraguay.',
-    images: ['/og-image.jpg'], // La misma imagen
+    images: ['/og-image.jpg'],
   },
   robots: {
     index: true,
@@ -47,7 +48,7 @@ export const metadata = {
     },
   },
   icons: {
-    icon: '/favicon.ico', // Asegúrate de tener un favicon
+    icon: '/favicon.ico',
     apple: '/apple-touch-icon.png',
   },
 };
@@ -56,17 +57,17 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'FinancialService',
   name: 'Prestame',
-  url: 'https://www.prestame.com.py', // Tu dominio real
-  logo: 'https://www.prestame.com.py/logo.png', // Tu logo
+  url: 'https://www.prestame.com.py',
+  logo: 'https://www.prestame.com.py/logo.png',
   description: 'Plataforma de Educación Financiera y Préstamos P2P en Paraguay.',
   address: {
     '@type': 'PostalAddress',
     addressCountry: 'PY',
-    addressLocality: 'Asunción', // Tu ciudad
+    addressLocality: 'Asunción',
   },
   contactPoint: {
     '@type': 'ContactPoint',
-    telephone: '+595-XXX-XXXXXX', // Tu teléfono
+    telephone: '+595-XXX-XXXXXX',
     contactType: 'Customer Service',
   },
 };
@@ -87,7 +88,13 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <Toaster position="top-center" reverseOrder={false} />
         <AuthProvider>
+          {/* ✅ EFECTO WOW DE IA */}
+          <AIWowEffect />
+          
           <AppShell>{children}</AppShell>
+          
+          {/* ✅ BOTÓN DE IA SCORING */}
+          <AIScoreButton />
         </AuthProvider>
       </body>
     </html>
