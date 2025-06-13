@@ -58,7 +58,7 @@ export default function RegisterPage() {
   };
 
   const password = watch('password');
-  const confirmPassword = watch('confirm_password');
+  const confirmPassword = watch('confirmPassword');
 
   const getPasswordStrength = (password) => {
     if (!password) return 0;
@@ -400,9 +400,9 @@ export default function RegisterPage() {
                   <div className="relative">
                     <FiLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
                     <motion.input
-                      {...register('confirm_password', { 
+                      {...register('confirmPassword', { 
                         required: 'Confirma tu contraseña',
-                        validate: value => value === password || 'Las contraseñas no coinciden'
+                        validate: (value) => value === password || 'Las contraseñas no coinciden'
                       })}
                       type={showConfirmPassword ? 'text' : 'password'}
                       className="w-full pl-12 pr-12 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
@@ -432,7 +432,7 @@ export default function RegisterPage() {
                   )}
 
                   <AnimatePresence>
-                    {errors.confirm_password && (
+                    {errors.confirmPassword && (
                       <motion.p
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -440,7 +440,7 @@ export default function RegisterPage() {
                         className="mt-2 text-red-400 text-sm flex items-center space-x-1"
                       >
                         <FiAlertCircle className="w-4 h-4" />
-                        <span>{errors.confirm_password.message}</span>
+                        <span>{errors.confirmPassword.message}</span>
                       </motion.p>
                     )}
                   </AnimatePresence>

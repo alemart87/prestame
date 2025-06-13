@@ -338,9 +338,18 @@ def get_score_breakdown():
         ai_conversation = AIConversation.query.filter_by(user_id=user_id).first()
         
         if not ai_conversation:
+            # ✅ CAMBIO: En lugar de error 404, devolver valores por defecto
             return jsonify({
-                'error': 'No se encontró conversación de IA para este usuario'
-            }), 404
+                'breakdown': {
+                    'final_score': None,
+                    'katupyry_score': 0,
+                    'linguistic_score': None,
+                    'indicators_bonus': 0,
+                    'last_updated': None,
+                    'has_conversation': False,
+                    'message': 'Inicia una conversación con nuestro asistente para obtener tu análisis completo'
+                }
+            }), 200
         
         # Si no tiene score final, calcularlo
         if ai_conversation.final_score is None:
@@ -348,6 +357,7 @@ def get_score_breakdown():
             db.session.commit()
         
         breakdown = ai_conversation.get_score_breakdown()
+        breakdown['has_conversation'] = True
         
         return jsonify({
             'breakdown': breakdown

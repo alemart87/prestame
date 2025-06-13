@@ -87,9 +87,24 @@ export default function DashboardPage() {
   const loadAiAnalysis = async () => {
     try {
       const response = await aiService.getScoreBreakdown();
-      setAiAnalysis(response.breakdown);
+      
+      if (response.breakdown && !response.breakdown.has_conversation) {
+        // Usuario nuevo sin conversación con IA
+        setAiAnalysis({
+          final_score: null,
+          katupyry_score: 0,
+          linguistic_score: null,
+          message: response.breakdown.message || 'Inicia una conversación con nuestro asistente'
+        });
+      } else {
+        setAiAnalysis(response.breakdown);
+      }
     } catch (error) {
-      console.error('Error al cargar análisis de IA:', error);
+      console.log('Usuario sin análisis de IA aún');
+      setAiAnalysis({
+        final_score: null,
+        message: 'Inicia una conversación con nuestro asistente para obtener tu análisis'
+      });
     }
   };
 
