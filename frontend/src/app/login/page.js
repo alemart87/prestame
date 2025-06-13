@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const { login, isAuthenticated } = useAuth();
   const router = useRouter();
 
@@ -23,6 +24,15 @@ export default function LoginPage() {
     if (isAuthenticated) {
       router.push('/dashboard');
     }
+
+    // ✅ Detectar mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, [isAuthenticated, router]);
 
   const onSubmit = async (data) => {
@@ -46,89 +56,98 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0">
-        <motion.div
-          className="absolute top-20 left-20 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl"
-          animate={{
-            x: [0, 100, 0],
-            y: [0, -100, 0],
-            scale: [1, 1.2, 1],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div
-          className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"
-          animate={{
-            x: [0, -150, 0],
-            y: [0, 100, 0],
-            scale: [1, 0.8, 1],
-          }}
-          transition={{
-            duration: 25,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div
-          className="absolute top-1/2 left-1/2 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl"
-          animate={{
-            x: [0, 200, -200, 0],
-            y: [0, -200, 200, 0],
-            scale: [1, 1.5, 0.5, 1],
-          }}
-          transition={{
-            duration: 30,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-      </div>
+      {/* ✅ EFECTOS OPTIMIZADOS: Solo en desktop */}
+      {!isMobile && (
+        <div className="absolute inset-0">
+          <motion.div
+            className="absolute top-20 left-20 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl"
+            animate={{
+              x: [0, 100, 0],
+              y: [0, -100, 0],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: 25, // ✅ Más lento para mejor performance
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          <motion.div
+            className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"
+            animate={{
+              x: [0, -150, 0],
+              y: [0, 100, 0],
+              scale: [1, 0.8, 1],
+            }}
+            transition={{
+              duration: 30,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          <motion.div
+            className="absolute top-1/2 left-1/2 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl"
+            animate={{
+              scale: [1, 1.3, 1],
+              opacity: [0.2, 0.3, 0.2],
+            }}
+            transition={{
+              duration: 20, // ✅ Animación simplificada
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+        </div>
+      )}
 
-      {/* Floating Particles */}
-      {[...Array(25)].map((_, i) => (
+      {/* ✅ PARTÍCULAS: Solo en desktop, reducidas */}
+      {!isMobile && [...Array(8)].map((_, i) => ( // ✅ 8 vs 25 partículas
         <motion.div
           key={i}
-          className="absolute w-2 h-2 bg-white/20 rounded-full"
+          className="absolute w-1 h-1 bg-white/30 rounded-full"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
+            left: `${20 + i * 10}%`, // ✅ Posiciones fijas vs random
+            top: `${20 + i * 8}%`,
           }}
           animate={{
-            y: [0, -100, 0],
-            opacity: [0, 1, 0],
+            y: [0, -60, 0],
+            opacity: [0.3, 0.8, 0.3],
           }}
           transition={{
-            duration: 3 + Math.random() * 2,
+            duration: 4 + i * 0.5, // ✅ Más lento
             repeat: Infinity,
-            delay: Math.random() * 2,
+            delay: i * 0.3,
           }}
         />
       ))}
 
+      {/* ✅ MOBILE: Solo gradiente estático */}
+      {isMobile && (
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-20 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl" />
+          <div className="absolute bottom-20 right-20 w-64 h-64 bg-purple-500/10 rounded-full blur-2xl" />
+        </div>
+      )}
+
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
         <motion.div
-          initial={{ opacity: 0, y: 50, scale: 0.9 }}
+          initial={{ opacity: 0, y: isMobile ? 20 : 50, scale: isMobile ? 1 : 0.9 }} // ✅ Animación reducida en mobile
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          transition={{ duration: isMobile ? 0.4 : 0.8, ease: "easeOut" }} // ✅ Más rápido en mobile
           className="w-full max-w-md"
         >
           {/* Glass Card */}
           <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl">
             {/* Header */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: isMobile ? 10 : 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
+              transition={{ delay: isMobile ? 0.1 : 0.2, duration: isMobile ? 0.3 : 0.6 }}
               className="text-center mb-8"
             >
               <motion.div
                 className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-6"
-                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileHover={!isMobile ? { scale: 1.1, rotate: 5 } : {}} // ✅ Sin hover en mobile
                 whileTap={{ scale: 0.95 }}
               >
                 <FiUser className="w-8 h-8 text-white" />
@@ -147,13 +166,13 @@ export default function LoginPage() {
               className="space-y-6"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
+              transition={{ delay: isMobile ? 0.15 : 0.3, duration: isMobile ? 0.3 : 0.6 }}
             >
               {/* Email Field */}
               <motion.div
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: isMobile ? 0 : -20 }} // ✅ Sin movimiento X en mobile
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4, duration: 0.6 }}
+                transition={{ delay: isMobile ? 0.2 : 0.4, duration: isMobile ? 0.3 : 0.6 }}
               >
                 <label className="block text-white/90 text-sm font-medium mb-2">
                   Correo Electrónico
@@ -171,7 +190,7 @@ export default function LoginPage() {
                     type="email"
                     className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
                     placeholder="tu@email.com"
-                    whileFocus={{ scale: 1.02 }}
+                    whileFocus={!isMobile ? { scale: 1.02 } : {}} // ✅ Sin scale en mobile
                   />
                   {watchedEmail && (
                     <motion.div
@@ -200,9 +219,9 @@ export default function LoginPage() {
 
               {/* Password Field */}
               <motion.div
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: isMobile ? 0 : -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5, duration: 0.6 }}
+                transition={{ delay: isMobile ? 0.25 : 0.5, duration: isMobile ? 0.3 : 0.6 }}
               >
                 <label className="block text-white/90 text-sm font-medium mb-2">
                   Contraseña
@@ -214,7 +233,7 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     className="w-full pl-12 pr-12 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
                     placeholder="••••••••"
-                    whileFocus={{ scale: 1.02 }}
+                    whileFocus={!isMobile ? { scale: 1.02 } : {}}
                   />
                   <button
                     type="button"
@@ -243,7 +262,7 @@ export default function LoginPage() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.6, duration: 0.6 }}
+                transition={{ delay: isMobile ? 0.3 : 0.6, duration: isMobile ? 0.3 : 0.6 }}
                 className="flex items-center justify-between"
               >
                 <label className="flex items-center space-x-2 cursor-pointer">
@@ -266,11 +285,11 @@ export default function LoginPage() {
                 type="submit"
                 disabled={loading}
                 className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                whileHover={{ scale: 1.02, y: -2 }}
+                whileHover={!isMobile ? { scale: 1.02, y: -2 } : {}} // ✅ Sin hover en mobile
                 whileTap={{ scale: 0.98 }}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: isMobile ? 10 : 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7, duration: 0.6 }}
+                transition={{ delay: isMobile ? 0.35 : 0.7, duration: isMobile ? 0.3 : 0.6 }}
               >
                 {loading ? (
                   <motion.div
@@ -313,7 +332,7 @@ export default function LoginPage() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.6 }}
+              transition={{ delay: isMobile ? 0.4 : 0.8, duration: isMobile ? 0.3 : 0.6 }}
               className="mt-8 text-center"
             >
               <p className="text-white/70 text-sm">
@@ -329,16 +348,16 @@ export default function LoginPage() {
 
             {/* Quick Registration Buttons */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: isMobile ? 10 : 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9, duration: 0.6 }}
+              transition={{ delay: isMobile ? 0.45 : 0.9, duration: isMobile ? 0.3 : 0.6 }}
               className="mt-8 pt-6 border-t border-white/20"
             >
               <p className="text-center text-white/70 text-sm mb-4">
                 ¿Primera vez en Prestame?
               </p>
               <div className="grid grid-cols-2 gap-3">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <motion.div whileHover={!isMobile ? { scale: 1.05 } : {}} whileTap={{ scale: 0.95 }}>
                   <Link
                     href="/register?type=borrower"
                     className="flex items-center justify-center px-4 py-3 bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/30 rounded-2xl text-sm font-medium text-green-300 hover:bg-green-500/30 transition-all duration-300"
@@ -347,7 +366,7 @@ export default function LoginPage() {
                     Quiero un préstamo
                   </Link>
                 </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <motion.div whileHover={!isMobile ? { scale: 1.05 } : {}} whileTap={{ scale: 0.95 }}>
                   <Link
                     href="/register?type=lender"
                     className="flex items-center justify-center px-4 py-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-2xl text-sm font-medium text-purple-300 hover:bg-purple-500/30 transition-all duration-300"

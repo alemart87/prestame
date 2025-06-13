@@ -4,6 +4,71 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiLock, FiEye, FiEyeOff, FiCheck, FiAlertCircle, FiShield } from 'react-icons/fi';
+import Link from 'next/link';
+import { toast } from 'react-toastify';
+
+// Componente de fondo optimizado para mobile
+const OptimizedBackground = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    // Detectar mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    // Detectar preferencia de movimiento reducido
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  if (isMobile || prefersReducedMotion) {
+    // Versión estática para mobile
+    return (
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900" />
+        <div className="absolute inset-0 bg-black/20" />
+        {/* Elementos estáticos mínimos */}
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-blue-500/10 rounded-full blur-xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-purple-500/10 rounded-full blur-xl" />
+      </div>
+    );
+  }
+
+  // Versión completa para desktop
+  return (
+    <div className="fixed inset-0 -z-10 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900" />
+      
+      {/* Partículas flotantes */}
+      {[...Array(15)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-2 h-2 bg-white/20 rounded-full animate-pulse"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 3}s`,
+            animationDuration: `${2 + Math.random() * 2}s`
+          }}
+        />
+      ))}
+      
+      {/* Ondas de fondo */}
+      <div className="absolute inset-0">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-blue-500/5 to-purple-500/5 animate-pulse" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-bounce" style={{ animationDuration: '6s' }} />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-bounce" style={{ animationDuration: '8s', animationDelay: '2s' }} />
+      </div>
+    </div>
+  );
+};
 
 const ResetPasswordPage = () => {
   const [password, setPassword] = useState('');
@@ -102,322 +167,140 @@ const ResetPasswordPage = () => {
 
   if (isTokenValid === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
-        <motion.div
-          className="text-center"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
-          <motion.div
-            className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full mx-auto mb-4"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          />
-          <p className="text-white text-lg">Verificando token...</p>
-        </motion.div>
+      <div className="min-h-screen flex items-center justify-center">
+        <OptimizedBackground />
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p>Verificando token...</p>
+        </div>
       </div>
     );
   }
 
   if (!isTokenValid) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
-        <motion.div
-          className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl max-w-md w-full mx-4"
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div className="text-center">
-            <motion.div
-              className="inline-flex items-center justify-center w-16 h-16 bg-red-500 rounded-full mb-4"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200 }}
-            >
-              <FiAlertCircle className="w-8 h-8 text-white" />
-            </motion.div>
-            <h2 className="text-2xl font-bold text-white mb-2">Token inválido</h2>
-            <p className="text-white/70">{error}</p>
-          </div>
-        </motion.div>
+      <div className="min-h-screen flex items-center justify-center">
+        <OptimizedBackground />
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 w-full max-w-md mx-4 text-center">
+          <div className="text-red-400 text-6xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold text-white mb-4">Token Inválido</h1>
+          <p className="text-gray-300 mb-6">
+            El enlace de recuperación es inválido o ha expirado.
+          </p>
+          <Link 
+            href="/forgot-password"
+            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+          >
+            Solicitar Nuevo Enlace
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0">
-        <motion.div
-          className="absolute top-20 left-20 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl"
-          animate={{
-            x: [0, 100, 0],
-            y: [0, -100, 0],
-            scale: [1, 1.2, 1],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div
-          className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"
-          animate={{
-            x: [0, -150, 0],
-            y: [0, 100, 0],
-            scale: [1, 0.8, 1],
-          }}
-          transition={{
-            duration: 25,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div
-          className="absolute top-1/2 left-1/2 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl"
-          animate={{
-            x: [0, 200, -200, 0],
-            y: [0, -200, 200, 0],
-            scale: [1, 1.5, 0.5, 1],
-          }}
-          transition={{
-            duration: 30,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <OptimizedBackground />
+      
+      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 w-full max-w-md shadow-2xl border border-white/20">
+        <div className="text-center mb-8">
+          <div className="text-4xl mb-4">🔐</div>
+          <h1 className="text-3xl font-bold text-white mb-2">Nueva Contraseña</h1>
+          <p className="text-gray-300">Ingresa tu nueva contraseña</p>
+        </div>
 
-      {/* Floating Particles */}
-      {[...Array(15)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-2 h-2 bg-white/20 rounded-full"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            y: [0, -100, 0],
-            opacity: [0, 1, 0],
-          }}
-          transition={{
-            duration: 3 + Math.random() * 2,
-            repeat: Infinity,
-            delay: Math.random() * 2,
-          }}
-        />
-      ))}
-
-      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <motion.div
-          initial={{ opacity: 0, y: 50, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="w-full max-w-md"
-        >
-          {/* Glass Card */}
-          <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl">
-            {/* Header */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-              className="text-center mb-8"
-            >
-              <motion.div
-                className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl mb-6"
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                whileTap={{ scale: 0.95 }}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Campo Nueva Contraseña */}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              Nueva Contraseña
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Ingresa tu nueva contraseña"
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
               >
-                <FiShield className="w-8 h-8 text-white" />
-              </motion.div>
-              
-              <h1 className="text-3xl font-bold text-white mb-2">
-                Nueva Contraseña
-              </h1>
-              <p className="text-white/70 text-sm leading-relaxed">
-                Crea una contraseña segura para proteger tu cuenta.
-              </p>
-            </motion.div>
-
-            <AnimatePresence mode="wait">
-              {!isSuccess ? (
-                <motion.form
-                  key="form"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onSubmit={handleSubmit}
-                  className="space-y-6"
-                >
-                  {/* Password Field */}
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3, duration: 0.6 }}
-                  >
-                    <label className="block text-white/90 text-sm font-medium mb-2">
-                      Nueva Contraseña
-                    </label>
-                    <div className="relative">
-                      <FiLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
-                      <motion.input
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-12 pr-12 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
-                        placeholder="••••••••"
-                        required
-                        whileFocus={{ scale: 1.02 }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white transition-colors"
-                      >
-                        {showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
-                      </button>
-                    </div>
-                    
-                    {/* Password Strength Indicator */}
-                    {password && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-3"
-                      >
-                        <div className="flex space-x-1 mb-2">
-                          {[...Array(5)].map((_, i) => (
-                            <div
-                              key={i}
-                              className={`h-2 flex-1 rounded-full transition-all duration-300 ${
-                                i < passwordStrength ? strengthColors[passwordStrength - 1] : 'bg-white/20'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <p className="text-xs text-white/70">
-                          Seguridad: <span className="font-medium">{strengthLabels[passwordStrength - 1] || 'Muy débil'}</span>
-                        </p>
-                      </motion.div>
-                    )}
-                  </motion.div>
-
-                  {/* Confirm Password Field */}
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4, duration: 0.6 }}
-                  >
-                    <label className="block text-white/90 text-sm font-medium mb-2">
-                      Confirmar Contraseña
-                    </label>
-                    <div className="relative">
-                      <FiLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
-                      <motion.input
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full pl-12 pr-12 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
-                        placeholder="••••••••"
-                        required
-                        whileFocus={{ scale: 1.02 }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white transition-colors"
-                      >
-                        {showConfirmPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
-                      </button>
-                    </div>
-                    
-                    {/* Password Match Indicator */}
-                    {confirmPassword && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-2"
-                      >
-                        <p className={`text-xs ${password === confirmPassword ? 'text-green-400' : 'text-red-400'}`}>
-                          {password === confirmPassword ? '✓ Las contraseñas coinciden' : '✗ Las contraseñas no coinciden'}
-                        </p>
-                      </motion.div>
-                    )}
-                  </motion.div>
-
-                  <motion.button
-                    type="submit"
-                    disabled={isLoading || password !== confirmPassword || password.length < 8}
-                    className="w-full py-4 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5, duration: 0.6 }}
-                  >
-                    {isLoading ? (
-                      <motion.div
-                        className="flex items-center justify-center space-x-2"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                      >
-                        <motion.div
-                          className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        />
-                        <span>Actualizando...</span>
-                      </motion.div>
-                    ) : (
-                      'Actualizar Contraseña'
-                    )}
-                  </motion.button>
-                </motion.form>
-              ) : (
-                <motion.div
-                  key="success"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="text-center py-8"
-                >
-                  <motion.div
-                    className="inline-flex items-center justify-center w-16 h-16 bg-green-500 rounded-full mb-4"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                  >
-                    <FiCheck className="w-8 h-8 text-white" />
-                  </motion.div>
-                  <h3 className="text-xl font-semibold text-white mb-2">¡Contraseña actualizada!</h3>
-                  <p className="text-white/70 text-sm mb-4">
-                    Tu contraseña ha sido cambiada exitosamente.
-                  </p>
-                  <p className="text-white/50 text-xs">
-                    Redirigiendo al inicio de sesión...
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Error Message */}
-            <AnimatePresence>
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  className="mt-4 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl flex items-center space-x-3"
-                >
-                  <FiAlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-                  <p className="text-red-200 text-sm">{error}</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
           </div>
-        </motion.div>
+
+          {/* Campo Confirmar Contraseña */}
+          <div>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+              Confirmar Contraseña
+            </label>
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Confirma tu nueva contraseña"
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+              >
+                {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
+          </div>
+
+          {/* Indicador de fortaleza de contraseña */}
+          {password && (
+            <div className="space-y-2">
+              <div className="text-sm text-gray-300">Fortaleza de la contraseña:</div>
+              <div className="flex space-x-1">
+                <div className={`h-2 w-1/4 rounded ${password.length >= 6 ? 'bg-red-500' : 'bg-gray-600'}`}></div>
+                <div className={`h-2 w-1/4 rounded ${password.length >= 8 ? 'bg-yellow-500' : 'bg-gray-600'}`}></div>
+                <div className={`h-2 w-1/4 rounded ${password.length >= 10 && /[A-Z]/.test(password) ? 'bg-blue-500' : 'bg-gray-600'}`}></div>
+                <div className={`h-2 w-1/4 rounded ${password.length >= 12 && /[A-Z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password) ? 'bg-green-500' : 'bg-gray-600'}`}></div>
+              </div>
+            </div>
+          )}
+
+          {/* Botón de envío */}
+          <button
+            type="submit"
+            disabled={isLoading || password !== confirmPassword || password.length < 6}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                Actualizando...
+              </div>
+            ) : (
+              'Actualizar Contraseña'
+            )}
+          </button>
+        </form>
+
+        {/* Enlaces adicionales */}
+        <div className="mt-6 text-center">
+          <Link 
+            href="/login" 
+            className="text-blue-400 hover:text-blue-300 transition-colors text-sm"
+          >
+            ← Volver al inicio de sesión
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const [userType, setUserType] = useState('borrower');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const { register: registerUser, isAuthenticated } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,6 +32,15 @@ export default function RegisterPage() {
     if (type && (type === 'borrower' || type === 'lender')) {
       setUserType(type);
     }
+
+    // ✅ Detectar mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, [isAuthenticated, router, searchParams]);
 
   const onSubmit = async (data) => {
@@ -76,20 +86,20 @@ export default function RegisterPage() {
   const strengthLabels = ['Muy débil', 'Débil', 'Regular', 'Fuerte', 'Muy fuerte'];
 
   return (
-    <AnimatedBackground particleCount={25}>
+    <AnimatedBackground particleCount={isMobile ? 0 : 15}> {/* ✅ Sin partículas en mobile */}
       <div className="flex items-center justify-center min-h-screen p-4">
         <div className="w-full max-w-2xl">
           <GlassCard className="relative overflow-hidden">
             {/* Header */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: isMobile ? 10 : 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
+              transition={{ delay: isMobile ? 0.1 : 0.2, duration: isMobile ? 0.3 : 0.6 }}
               className="text-center mb-8"
             >
               <motion.div
                 className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl mb-6"
-                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileHover={!isMobile ? { scale: 1.1, rotate: 5 } : {}} // ✅ Sin hover en mobile
                 whileTap={{ scale: 0.95 }}
               >
                 <FiUser className="w-8 h-8 text-white" />
@@ -108,9 +118,9 @@ export default function RegisterPage() {
 
             {/* User Type Selector */}
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: isMobile ? 0 : -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
+              transition={{ delay: isMobile ? 0.15 : 0.3, duration: isMobile ? 0.3 : 0.6 }}
               className="mb-8"
             >
               <div className="flex rounded-2xl bg-white/10 p-1 backdrop-blur-sm border border-white/20">
@@ -122,7 +132,7 @@ export default function RegisterPage() {
                       ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-lg'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
-                  whileHover={{ scale: 1.02 }}
+                  whileHover={!isMobile ? { scale: 1.02 } : {}}
                   whileTap={{ scale: 0.98 }}
                 >
                   <FiDollarSign className="mr-2 h-5 w-5" />
@@ -136,7 +146,7 @@ export default function RegisterPage() {
                       ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
-                  whileHover={{ scale: 1.02 }}
+                  whileHover={!isMobile ? { scale: 1.02 } : {}}
                   whileTap={{ scale: 0.98 }}
                 >
                   <FiUsers className="mr-2 h-5 w-5" />
@@ -150,14 +160,14 @@ export default function RegisterPage() {
               className="space-y-6"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
+              transition={{ delay: isMobile ? 0.2 : 0.4, duration: isMobile ? 0.3 : 0.6 }}
             >
               {/* Name Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <motion.div
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: isMobile ? 0 : -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5, duration: 0.6 }}
+                  transition={{ delay: isMobile ? 0.25 : 0.5, duration: isMobile ? 0.3 : 0.6 }}
                 >
                   <label className="block text-white/90 text-sm font-medium mb-2">
                     Nombre
@@ -169,7 +179,7 @@ export default function RegisterPage() {
                       type="text"
                       className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
                       placeholder="Tu nombre"
-                      whileFocus={{ scale: 1.02 }}
+                      whileFocus={!isMobile ? { scale: 1.02 } : {}}
                     />
                   </div>
                   <AnimatePresence>
@@ -188,9 +198,9 @@ export default function RegisterPage() {
                 </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: isMobile ? 0 : 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6, duration: 0.6 }}
+                  transition={{ delay: isMobile ? 0.3 : 0.6, duration: isMobile ? 0.3 : 0.6 }}
                 >
                   <label className="block text-white/90 text-sm font-medium mb-2">
                     Apellido
@@ -202,7 +212,7 @@ export default function RegisterPage() {
                       type="text"
                       className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
                       placeholder="Tu apellido"
-                      whileFocus={{ scale: 1.02 }}
+                      whileFocus={!isMobile ? { scale: 1.02 } : {}}
                     />
                   </div>
                   <AnimatePresence>
@@ -223,9 +233,9 @@ export default function RegisterPage() {
 
               {/* Email Field */}
               <motion.div
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: isMobile ? 0 : -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.7, duration: 0.6 }}
+                transition={{ delay: isMobile ? 0.35 : 0.7, duration: isMobile ? 0.3 : 0.6 }}
               >
                 <label className="block text-white/90 text-sm font-medium mb-2">
                   Correo Electrónico
@@ -243,7 +253,7 @@ export default function RegisterPage() {
                     type="email"
                     className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
                     placeholder="tu@email.com"
-                    whileFocus={{ scale: 1.02 }}
+                    whileFocus={!isMobile ? { scale: 1.02 } : {}}
                   />
                 </div>
                 <AnimatePresence>
@@ -264,9 +274,9 @@ export default function RegisterPage() {
               {/* Phone and City Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <motion.div
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: isMobile ? 0 : -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.8, duration: 0.6 }}
+                  transition={{ delay: isMobile ? 0.4 : 0.8, duration: isMobile ? 0.3 : 0.6 }}
                 >
                   <label className="block text-white/90 text-sm font-medium mb-2">
                     Teléfono
@@ -278,7 +288,7 @@ export default function RegisterPage() {
                       type="tel"
                       className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
                       placeholder="0981 123 456"
-                      whileFocus={{ scale: 1.02 }}
+                      whileFocus={!isMobile ? { scale: 1.02 } : {}}
                     />
                   </div>
                   <AnimatePresence>
@@ -297,9 +307,9 @@ export default function RegisterPage() {
                 </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: isMobile ? 0 : 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.9, duration: 0.6 }}
+                  transition={{ delay: isMobile ? 0.45 : 0.9, duration: isMobile ? 0.3 : 0.6 }}
                 >
                   <label className="block text-white/90 text-sm font-medium mb-2">
                     Ciudad
@@ -311,7 +321,7 @@ export default function RegisterPage() {
                       type="text"
                       className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
                       placeholder="Asunción"
-                      whileFocus={{ scale: 1.02 }}
+                      whileFocus={!isMobile ? { scale: 1.02 } : {}}
                     />
                   </div>
                 </motion.div>
@@ -320,9 +330,9 @@ export default function RegisterPage() {
               {/* Password Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <motion.div
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: isMobile ? 0 : -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 1.0, duration: 0.6 }}
+                  transition={{ delay: isMobile ? 0.5 : 1.0, duration: isMobile ? 0.3 : 0.6 }}
                 >
                   <label className="block text-white/90 text-sm font-medium mb-2">
                     Contraseña
@@ -340,7 +350,7 @@ export default function RegisterPage() {
                       type={showPassword ? 'text' : 'password'}
                       className="w-full pl-12 pr-12 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
                       placeholder="••••••••"
-                      whileFocus={{ scale: 1.02 }}
+                      whileFocus={!isMobile ? { scale: 1.02 } : {}}
                     />
                     <button
                       type="button"
@@ -390,9 +400,9 @@ export default function RegisterPage() {
                 </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: isMobile ? 0 : 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 1.1, duration: 0.6 }}
+                  transition={{ delay: isMobile ? 0.55 : 1.1, duration: isMobile ? 0.3 : 0.6 }}
                 >
                   <label className="block text-white/90 text-sm font-medium mb-2">
                     Confirmar Contraseña
@@ -407,7 +417,7 @@ export default function RegisterPage() {
                       type={showConfirmPassword ? 'text' : 'password'}
                       className="w-full pl-12 pr-12 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
                       placeholder="••••••••"
-                      whileFocus={{ scale: 1.02 }}
+                      whileFocus={!isMobile ? { scale: 1.02 } : {}}
                     />
                     <button
                       type="button"
@@ -452,11 +462,11 @@ export default function RegisterPage() {
                 type="submit"
                 disabled={loading}
                 className="w-full py-4 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                whileHover={{ scale: 1.02, y: -2 }}
+                whileHover={!isMobile ? { scale: 1.02, y: -2 } : {}}
                 whileTap={{ scale: 0.98 }}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: isMobile ? 10 : 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.2, duration: 0.6 }}
+                transition={{ delay: isMobile ? 0.6 : 1.2, duration: isMobile ? 0.3 : 0.6 }}
               >
                 {loading ? (
                   <motion.div
@@ -499,7 +509,7 @@ export default function RegisterPage() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 1.3, duration: 0.6 }}
+              transition={{ delay: isMobile ? 0.65 : 1.3, duration: isMobile ? 0.3 : 0.6 }}
               className="mt-8 text-center"
             >
               <p className="text-white/70 text-sm">
