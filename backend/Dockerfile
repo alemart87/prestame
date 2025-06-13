@@ -46,9 +46,9 @@ RUN mkdir -p instance
 EXPOSE 5000
 
 # Variables de entorno por defecto
-ENV FLASK_APP=run.py
+ENV FLASK_APP=start.py
 ENV FLASK_ENV=production
 ENV PYTHONPATH=/app
 
-# Comando para ejecutar la aplicación
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "run:app"] 
+# Comando para ejecutar la aplicación usando start.py directamente
+CMD ["python", "start.py"] 
