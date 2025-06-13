@@ -7,6 +7,10 @@ RUN apk add --no-cache libc6-compat
 # Establecer directorio de trabajo
 WORKDIR /app
 
+# Etapa de dependencias
+FROM base AS deps
+WORKDIR /app
+
 # Copiar archivos de dependencias
 COPY package*.json ./
 
@@ -27,8 +31,11 @@ RUN npm ci
 COPY . .
 
 # Variables de entorno para el build
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+
+# ✅ CAMBIO: Variable de entorno correcta para la API
+ENV NEXT_PUBLIC_API_URL=https://prestame.onrender.com
 
 # Construir la aplicación
 RUN npm run build
@@ -37,8 +44,8 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Crear usuario no-root
 RUN addgroup --system --gid 1001 nodejs
@@ -46,11 +53,10 @@ RUN adduser --system --uid 1001 nextjs
 
 # Copiar archivos necesarios desde el builder
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
 
-# Cambiar propietario de los archivos
-RUN chown -R nextjs:nodejs /app
+# ✅ CAMBIO: Usar standalone output
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Cambiar a usuario no-root
 USER nextjs
@@ -58,8 +64,8 @@ USER nextjs
 # Exponer el puerto
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-# Comando para ejecutar la aplicación
+# ✅ CAMBIO: Comando optimizado
 CMD ["node", "server.js"] 

@@ -1,7 +1,12 @@
 import axios from 'axios';
 
-// URL base del API desde variables de entorno
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api`;
+// ✅ ACTUALIZAR: URL base del API con la dirección correcta
+const API_BASE_URL = `${
+  process.env.NEXT_PUBLIC_API_URL || 
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000' 
+    : 'https://prestame.onrender.com')
+}/api`;
 
 // Crear instancia de axios
 const api = axios.create({

@@ -13,7 +13,7 @@ export const metadata = {
     default: 'Prestame - Tu Guía Hacia el Bienestar Financiero en Paraguay',
   },
   description: 'Aprende a manejar tus finanzas, mejora tu score crediticio con IA y accede a las mejores oportunidades de inversión y préstamos en Paraguay.',
-  metadataBase: new URL('https://www.prestame.com.py'), // Reemplaza con tu dominio real
+  metadataBase: new URL('https://prestame-frontend.onrender.com'), // ✅ Cambiar cuando tengas la URL del frontend
   openGraph: {
     title: 'Prestame - Educación Financiera',
     description: 'Más que préstamos, te damos el conocimiento para que tomes el control de tu futuro financiero.',

@@ -35,7 +35,11 @@ def create_app(config_class=Config):
     db.init_app(app)
     jwt.init_app(app)
     migrate.init_app(app, db)
-    CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS")}})
+    CORS(app, origins=[
+        "http://localhost:3000",  # Para desarrollo
+        "https://prestame-frontend.onrender.com",  # Para producción (cambiar por tu URL real)
+        "https://tu-dominio-personalizado.com"  # Si tienes dominio personalizado
+    ])
     ma.init_app(app)
     
     # Importar modelos para que SQLAlchemy los reconozca
