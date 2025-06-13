@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { lenderService, getLeadsForLender } from '../../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import { 
   FiUserPlus, 
   FiMail, 
@@ -55,8 +55,6 @@ import {
 import AnimatedBackground from '../../../components/AnimatedBackground';
 import GlassCard from '../../../components/GlassCard';
 import AppNavbar from '../../../components/AppNavbar';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
 import { useRouter } from 'next/navigation';
 
 // Definición de estados de leads
@@ -1725,14 +1723,15 @@ const LeadDetailModal = ({
                                     Programar seguimiento
                                 </label>
                                 <div className="space-y-3">
-                                    <DatePicker
-                                        selected={followUpDate}
-                                        onChange={date => setFollowUpDate(date)}
-                                        className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                                        minDate={new Date()}
-                                        dateFormat="dd/MM/yyyy"
-                                        placeholderText="Seleccionar fecha"
-                                    />
+                                    <div className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50">
+                                        <input
+                                            type="date"
+                                            value={followUpDate.toISOString().split('T')[0]}
+                                            onChange={(e) => setFollowUpDate(new Date(e.target.value))}
+                                            className="w-full bg-transparent text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                                            placeholder="Seleccionar fecha"
+                                        />
+                                    </div>
                                     
                                     {getFollowUpDate(lead) && (
                                         <div className="bg-purple-500/20 text-purple-300 p-3 rounded-lg border border-purple-500/30">

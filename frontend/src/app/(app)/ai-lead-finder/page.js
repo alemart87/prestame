@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { findLeadsWithAI, getSearchStatus } from '../../../services/api';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import { FaGlobe, FaSearch, FaSpinner, FaMapMarkerAlt, FaBuilding } from 'react-icons/fa';
 import AppNavbar from '../../../components/AppNavbar';
 import AnimatedBackground from '../../../components/AnimatedBackground';
